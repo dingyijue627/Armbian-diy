@@ -83,7 +83,7 @@ env:
 
 jobs:
   Armbian:  
-    runs-on: ubuntu-22.04 
+    runs-on: ubuntu-latest 
     steps:
       - name: "Checkout customisations"
         uses: actions/checkout@main
@@ -190,7 +190,7 @@ jobs:
           ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
           EXPERT="yes" \
           VENDOR=Armbian \
-          IMAGE_XZ_COMPRESSION_RATIO=5 \
+          IMAGE_XZ_COMPRESSION_RATIO=7 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
           
       - name: "Generate body file"
