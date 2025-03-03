@@ -55,7 +55,7 @@ env:
 
 jobs:
   Armbian:  
-    runs-on: ubuntu-22.04  
+    runs-on: ubuntu-latest 
     strategy:
       matrix:
         RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
@@ -87,9 +87,9 @@ jobs:
       - name: Set Env
         shell: bash
         run: |
-          sudo apt update -y
-          sudo apt-get full-upgrade -y
-          sudo apt-get install -y software-properties-common
+          # sudo apt update -y
+          # sudo apt-get full-upgrade -y
+          # sudo apt-get install -y software-properties-common
           
           # userspace decode
           if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
