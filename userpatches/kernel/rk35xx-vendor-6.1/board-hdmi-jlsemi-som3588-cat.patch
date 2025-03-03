@@ -1,0 +1,28 @@
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.c 	2025-01-12 18:02:22.000000000 +0800
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.c	2025-01-12 18:04:14.000000000 +0800
+@@ -146,6 +146,25 @@
+ };
+ 
+ static const struct drm_display_mode dw_hdmi_default_modes[] = {
++
++	 /* 16 - "2560x1440", @60Hz 16:9    H、+HFP、+HS、+HBP，V、+VFP、+VS、+VBP */
++	{ DRM_MODE("2560x1440", DRM_MODE_TYPE_DRIVER, 241700, 2560, 2608,
++		2640, 2720, 0, 1440, 1443, 1448, 1481, 0,
++		DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	 .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++	 
++	 /* 16 - "2560x1440", @60Hz 16:9    H、+HFP、+HS、+HBP，V、+VFP、+VS、+VBP */
++	{ DRM_MODE("2560x1440", DRM_MODE_TYPE_DRIVER, 483400, 2560, 2608,
++		2640, 2720, 0, 1440, 1443, 1448, 1481, 0,
++		DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	 .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++	 
++	 /* 16 - "3840x2160", @60Hz 16:9    H、+HFP、+HS、+HBP，V、+VFP、+VS、+VBP */
++	{ DRM_MODE("3840x2160", DRM_MODE_TYPE_DRIVER, 594000, 3840, 4016,
++		4104,4400, 0, 2160, 2232, 2242, 2250, 0,
++		DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	 .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++
+ 	/* 16 - 1920x1080@60Hz 16:9 */
+ 	{ DRM_MODE("1920x1080", DRM_MODE_TYPE_DRIVER, 148500, 1920, 2008,
+ 		   2052, 2200, 0, 1080, 1084, 1089, 1125, 0,
