@@ -23,6 +23,11 @@ function post_family_tweaks__som3588-cat_naming_audios() {
 	echo 'SUBSYSTEM=="sound", ENV{ID_PATH}=="platform-es8388-sound", ENV{SOUND_DESCRIPTION}="ES8388 Audio"' >> $SDCARD/etc/udev/rules.d/90-naming-audios.rules
 	return 0
 }
+function post_family_config__kernel_som3588cat() {
+	declare -g KERNELBRANCH='branch:rk-6.1-rkr4.1'
+	declare -g KERNELSOURCE='https://github.com/CNflysky/linux-rockchip.git'
+}	
+
 #function post_family_config_branch_legacy__kernel_som3588cat() {
 #	if [[ $BRANCH == "edge" ]]; then
 #		declare -g KERNELSOURCE='https://github.com/YANXIAOXIH/kernel.git'
