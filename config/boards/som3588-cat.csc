@@ -23,3 +23,6 @@ function post_family_tweaks__som3588-cat_naming_audios() {
 	echo 'SUBSYSTEM=="sound", ENV{ID_PATH}=="platform-es8388-sound", ENV{SOUND_DESCRIPTION}="ES8388 Audio"' >> $SDCARD/etc/udev/rules.d/90-naming-audios.rules
 	return 0
 }
+function post_family_config__kernel_som3588cat() {
+	declare -g KERNELBRANCH='tag:v6.14-rc5'
+}
