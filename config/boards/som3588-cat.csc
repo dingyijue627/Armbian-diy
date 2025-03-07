@@ -25,6 +25,6 @@ function post_family_tweaks__som3588-cat_naming_audios() {
 }
 function post_family_config_branch_legacy__kernel_som3588cat() {
 	if [[ $BRANCH == "edge" ]]; then
-		declare -g BOOTBRANCH='branch::v6.14-rc5'
+		declare -g BOOTBRANCH='branch:master'
 	fi
 }
