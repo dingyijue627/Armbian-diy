@@ -10,15 +10,12 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pinctrl/rockchip.h>
-//#include <dt-bindings/input/rk-input.h>
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
 #include <dt-bindings/display/rockchip_vop.h>
 #include <dt-bindings/sensor-dev.h>
-#include <dt-bindings/phy/jlsemi-dt-phy.h>
 #include "rk3588.dtsi"
 #include "rk3588-linux.dtsi"
-
 
 / {
 	model = "SOM3588Cat";
@@ -41,7 +38,7 @@
 	chosen: chosen {
 		bootargs = "earlycon=uart8250,mmio32,0xfeb50000 console=ttyFIQ0 irqchip.gicv3_pseudo_nmi=0 rcupdate.rcu_expedited=1 rcu_nocbs=all";
 	};
-
+	
 	adc_keys: adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
@@ -1288,21 +1285,6 @@
 	status = "okay";
 };
 
-/* SATA30_HOST0/PCIe20x1_2 Combo PHY */
-&combphy0_ps {
-	status = "okay";
-};
-
-// Mini-PCIe
-&sata0 {
-	status = "okay";
-};
-&pcie2x1l2 {
-	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
-	disable-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
-	status = "disabled";
-};
-
 /* SATA30_HOST1/PCIe20x1_0 Combo PHY */
 &combphy1_ps {
 	status = "okay";
@@ -1313,6 +1295,22 @@
 	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
 	disable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+};
+
+/* SATA30/PCIe20x1_2 Combo PHY */
+&combphy0_ps {
+	status = "okay";
+};
+
+// Mini-PCIe
+&sata0 {
+	status = "okay";
+};
+
+&pcie2x1l2 {
+	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
+	disable-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+	status = "disabled";
 };
 
 /* USB3.1/DP Combo PHY1 */
@@ -1402,7 +1400,7 @@
 	status = "okay";
 };
 
-/* USB30_HOST2/SATA30_HOST2/PCIe20x1_1 Combo PHY */
+/* USB3.1/SATA/PCIe20x1_1 Combo PHY */
 &combphy2_psu {
 	status = "okay";
 };
@@ -1477,11 +1475,6 @@
 	connect = <&vp1_out_dp0>;
 };
 
-&route_hdmi1{
-	status = "okay";
-	connect = <&vp0_out_hdmi1>;
-};
-
 &dp0_in_vp0 {
 	status = "disabled";
 };
@@ -1494,6 +1487,11 @@
 	status = "disabled";
 };
 
+&route_hdmi1{
+	status = "okay";
+	connect = <&vp0_out_hdmi1>;
+};
+
 &hdmi1_in_vp0 {
 	status = "okay";
 };
@@ -1504,6 +1502,11 @@
 
 &hdmi1_in_vp2 {
 	status = "disabled";
+};
+
+&hdmi1 {
+	enable-gpios = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 &vop {
@@ -1557,11 +1560,6 @@
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER3 | 1 << ROCKCHIP_VOP2_ESMART3)>;
 	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART3>;
 	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER3>;
-};
-
-&hdmi1 {
-	enable-gpios = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 };
 
 &display_subsystem {
