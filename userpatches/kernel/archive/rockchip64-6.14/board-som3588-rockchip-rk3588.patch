@@ -1,5 +1,5 @@
---- a/include/dt-bindings/suspend/rockchip-rk3588.h	2025-02-20 16:11:26.222587348 +0800
-+++ b/include/dt-bindings/suspend/rockchip-rk3588.h	2025-02-21 17:53:07.799447200 +0800
+--- a/include/dt-bindings/suspend/rockchip-rk3588.h	2025-03-11 01:16:35.201499332 +0800
++++ b/include/dt-bindings/suspend/rockchip-rk3588.h	2025-03-10 19:02:30.370607123 +0800
 @@ -0,0 +1,88 @@
 +/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
 +/*
