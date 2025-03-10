@@ -1,0 +1,97 @@
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+index c3abdfb04..016039cf6 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -2758,6 +2758,19 @@ cpu_code: cpu-code@2 {
+ 			reg = <0x02 0x2>;
+ 		};
+ 
++		package_serial_number_high: package-serial-number-high@5 {
++			reg = <0x05 0x1>;
++			bits = <0 1>;
++		};
++		package_serial_number_low: package-serial-number-low@6 {
++			reg = <0x06 0x1>;
++			bits = <5 3>;
++		};
++		specification_serial_number: specification-serial-number@6 {
++			reg = <0x06 0x1>;
++			bits = <0 5>;
++		};
++
+ 		otp_id: id@7 {
+ 			reg = <0x07 0x10>;
+ 		};
+@@ -2791,6 +2804,22 @@ npu_leakage: npu-leakage@28 {
+ 			reg = <0x28 0x1>;
+ 		};
+ 
++		npu_opp_info: npu-opp-info@55 {
++			reg = <0x55 0x6>;
++		};
++
++		dmc_opp_info: dmc-opp-info@5b {
++			reg = <0x5b 0x6>;
++		};
++		
++		vop_opp_info: vop-opp-info@61 {
++			reg = <0x61 0x6>;
++		};
++
++		venc_opp_info: venc-opp-info@67 {
++			reg = <0x67 0x6>;
++		};
++
+ 		codec_leakage: codec-leakage@29 {
+ 			reg = <0x29 0x1>;
+ 		};
+diff --git a/include/dt-bindings/pinctrl/rockchip.h b/include/dt-bindings/pinctrl/rockchip.h
+index 5f291045e..94389ee0d 100644
+--- a/include/dt-bindings/pinctrl/rockchip.h
++++ b/include/dt-bindings/pinctrl/rockchip.h
+@@ -44,4 +44,21 @@
+ 
+ #define RK_FUNC_GPIO	0
+ 
++#define PCA_IO0_0		0
++#define PCA_IO0_1		1
++#define PCA_IO0_2		2
++#define PCA_IO0_3		3
++#define PCA_IO0_4		4
++#define PCA_IO0_5		5
++#define PCA_IO0_6		6
++#define PCA_IO0_7		7
++#define PCA_IO1_0		8
++#define PCA_IO1_1		9
++#define PCA_IO1_2		10
++#define PCA_IO1_3		11
++#define PCA_IO1_4		12
++#define PCA_IO1_5		13
++#define PCA_IO1_6		14
++#define PCA_IO1_7		15
++
+ #endif
+diff --git a/include/dt-bindings/soc/rockchip,boot-mode.h b/include/dt-bindings/soc/rockchip,boot-mode.h
+index 4b0914c09..2c441d3d5 100644
+--- a/include/dt-bindings/soc/rockchip,boot-mode.h
++++ b/include/dt-bindings/soc/rockchip,boot-mode.h
+@@ -10,7 +10,19 @@
+ #define BOOT_BL_DOWNLOAD	(REBOOT_FLAG + 1)
+ /* enter recovery */
+ #define BOOT_RECOVERY		(REBOOT_FLAG + 3)
++/* reboot by panic */
++#define BOOT_PANIC		(REBOOT_FLAG + 7)
++/* reboot by watchdog */
++#define BOOT_WATCHDOG		(REBOOT_FLAG + 8)
+  /* enter fastboot mode */
+ #define BOOT_FASTBOOT		(REBOOT_FLAG + 9)
++/* enter charging mode */
++#define BOOT_CHARGING		(REBOOT_FLAG + 11)
++/* enter usb mass storage mode */
++#define BOOT_UMS		(REBOOT_FLAG + 12)
++/* reboot system quiescent */
++#define BOOT_QUIESCENT		(REBOOT_FLAG + 14)
++/* reboot by panic and capture ramdump in uboot through usb */
++#define BOOT_WINUSB		(REBOOT_FLAG + 15)
+ 
+ #endif
