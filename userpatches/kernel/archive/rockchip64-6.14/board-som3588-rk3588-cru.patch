@@ -1,5 +1,5 @@
---- a/include/dt-bindings/clock/rk3588-cru.h	2025-02-20 16:11:26.222587348 +0800
-+++ b/include/dt-bindings/clock/rk3588-cru.h	2025-02-21 00:29:31.857131600 +0800
+--- a/include/dt-bindings/clock/rk3588-cru.h	2025-03-11 01:16:35.201499332 +0800
++++ b/include/dt-bindings/clock/rk3588-cru.h	2025-03-10 19:40:51.534376198 +0800
 @@ -0,0 +1,1501 @@
 +/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
 +/*
