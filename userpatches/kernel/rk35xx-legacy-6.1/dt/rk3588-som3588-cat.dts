@@ -181,7 +181,6 @@
 		pinctrl-0 = <&typec_vbus_en>;
 	};
 
-
 	mipi_dsi0_power: mipi-dsi0-power-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "mipi_dsi0_power";
@@ -435,7 +434,6 @@
 		// #interrupt-cells = <2>;
 	};
 };
-
 
 &i2c0 {
 	pinctrl-names = "default";
