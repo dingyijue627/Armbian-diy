@@ -1,10 +1,10 @@
---- a/include/dt-bindings/display/drm_mipi_dsi.h	2025-02-20 16:11:26.222587348 +0800
-+++ b/include/dt-bindings/display/drm_mipi_dsi.h	2025-02-20 16:09:54.063715319 +0800
+--- a/include/dt-bindings/display/drm_mipi_dsi.h	2025-03-11 01:16:35.201499332 +0800
++++ b/include/dt-bindings/display/drm_mipi_dsi.h	2025-03-10 14:26:51.273317771 +0800
 @@ -0,0 +1,53 @@
 +/*
 + * MIPI DSI Bus
 + *
-+ * Copyright (c) Fuzhou Rockchip Electronics Co.Ltd
++ * Copyright (c) Rockchip Electronics Co., Ltd.
 + * Authors:
 + *       Mark Yao <yzq@rock-chips.com>
 + *
