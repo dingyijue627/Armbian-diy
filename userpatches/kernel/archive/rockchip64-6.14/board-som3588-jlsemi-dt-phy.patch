@@ -1,5 +1,5 @@
---- a/include/dt-bindings/phy/jlsemi-dt-phy.h	2025-02-20 16:11:26.222587348 +0800
-+++ b/include/dt-bindings/phy/jlsemi-dt-phy.h	2025-01-20 01:38:38.695714800 +0800
+--- a/include/dt-bindings/display/jlsemi-dt-phy.h	2025-03-11 01:16:35.201499332 +0800
++++ b/include/dt-bindings/display/jlsemi-dt-phy.h	2025-03-10 19:47:26.820424566 +0800
 @@ -0,0 +1,341 @@
 +/* SPDX-License-Identifier: GPL-2.0
 + *
