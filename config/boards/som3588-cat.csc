@@ -23,3 +23,16 @@ function post_family_tweaks__som3588-cat_naming_audios() {
 	echo 'SUBSYSTEM=="sound", ENV{ID_PATH}=="platform-es8388-sound", ENV{SOUND_DESCRIPTION}="ES8388 Audio"' >> $SDCARD/etc/udev/rules.d/90-naming-audios.rules
 	return 0
 }
+function post_family_config_branch_legacy__som3588-cat_use_mainline_uboot() {
+	if [[ $BRANCH == "legacy" ]]; then
+		OOTSCRIPT='boot-rk35xx.cmd:boot.cmd'
+		BOOTDIR='u-boot-rockchip64'
+		declare -g KERNEL_MAJOR_MINOR="6.1"   # Major and minor versions of this kernel.
+		declare -g -i KERNEL_GIT_CACHE_TTL=120 # 2 minutes; this is a high-traffic repo
+		KERNELSOURCE='https://github.com/CNflysky/linux-rockchip.git'
+		KERNELBRANCH='branch:rk-6.1-rkr4.1'
+		KERNELPATCHDIR='rk35xx-vendor-6.1'
+		LINUXCONFIG='linux-rk35xx-vendor'
+		LINUXFAMILY=rk35xx
+	fi
+}
