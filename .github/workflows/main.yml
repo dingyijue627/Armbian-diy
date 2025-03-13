@@ -161,7 +161,7 @@ jobs:
           # copy os userpatches
           mkdir -p  ./build/userpatches
           #cp -rf ./custom/config/* ./build/config
-          mv ./custom/config/bords/som3588-cat.csc ./build/config/bords/som3588-cat.conf
+          mv ./custom/config/boards/som3588-cat.csc ./build/config/boards/som3588-cat.conf
           cp -rf ./custom/userpatches/* ./build/patch
           cp -rf ./os/userpatches/* ./build/userpatches
           
