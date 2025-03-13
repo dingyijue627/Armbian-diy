@@ -83,7 +83,7 @@ env:
 
 jobs:
   Armbian:  
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-22.04 
     steps:
       - name: "Checkout customisations"
         uses: actions/checkout@main
@@ -113,7 +113,7 @@ jobs:
         run: |
           sudo apt update -y
           sudo apt-get full-upgrade -y
-          #sudo apt-get install -y software-properties-common
+          sudo apt-get install -y software-properties-common
           
           # userspace decode DESKTOP
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
