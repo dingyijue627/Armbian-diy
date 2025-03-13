@@ -1,6 +1,6 @@
 --- a/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts	2025-03-14 02:38:58.000000000 +0800
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts	2025-03-14 02:47:33.067788191 +0800
-@@ -10,19 +10,16 @@
+@@ -10,19 +10,17 @@
  #include <dt-bindings/gpio/gpio.h>
  #include <dt-bindings/pwm/pwm.h>
  #include <dt-bindings/pinctrl/rockchip.h>
@@ -8,8 +8,9 @@
  #include <dt-bindings/input/linux-event-codes.h>
  #include <dt-bindings/display/drm_mipi_dsi.h>
  #include <dt-bindings/display/rockchip_vop.h>
- #include <dt-bindings/sensor-dev.h>
--#include <dt-bindings/phy/jlsemi-dt-phy.h>
+-#include <dt-bindings/sensor-dev.h>
+ #include <dt-bindings/phy/jlsemi-dt-phy.h>
++#include <dt-bindings/sensor-dev.h>
  #include "rk3588.dtsi"
  #include "rk3588-linux.dtsi"
  
