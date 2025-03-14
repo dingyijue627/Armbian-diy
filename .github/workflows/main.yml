@@ -61,7 +61,7 @@ on:
         - ubuntu:noble
         - debian:bookworm
         - ubuntu-latest
-        default: 'ubuntu:jammy'
+        default: 'ubuntu-latest'
       
       ROOTFS:
         type: choice
@@ -111,18 +111,7 @@ jobs:
       - name: Armbian Env
         shell: bash
         run: |
-          # 清理 Docker 镜像和软件缓存
           sudo apt update -y
-          docker_images_ids=$(docker images -q)
-          if [ -n "$docker_images_ids" ]; then
-            docker rmi $docker_images_ids
-          fi
-          docker image prune -a -f
-          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-          #sudo apt-get full-upgrade -y
-          #sudo apt-get install -y software-properties-common
           
           # userspace decode DESKTOP
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
@@ -163,14 +152,12 @@ jobs:
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
           # read VERSION_OVERRIDE from upstream Armbian OS
-          #cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
+          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
           [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
          
           # copy os userpatches
           mkdir -p  ./build/userpatches
           cp -rf ./custom/config/* ./build/config
-          #mv ./custom/config/boards/som3588-cat.csc ./build/config/boards/som3588-cat.conf
           cp -rf ./custom/userpatches/* ./build/patch
           cp -rf ./os/userpatches/* ./build/userpatches
           
