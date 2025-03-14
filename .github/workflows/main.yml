@@ -111,9 +111,18 @@ jobs:
       - name: Armbian Env
         shell: bash
         run: |
+          # 清理 Docker 镜像和软件缓存
           sudo apt update -y
-          sudo apt-get full-upgrade -y
-          sudo apt-get install -y software-properties-common
+          docker_images_ids=$(docker images -q)
+          if [ -n "$docker_images_ids" ]; then
+            docker rmi $docker_images_ids
+          fi
+          docker image prune -a -f
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          #sudo apt-get full-upgrade -y
+          #sudo apt-get install -y software-properties-common
           
           # userspace decode DESKTOP
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
@@ -164,7 +173,6 @@ jobs:
           #mv ./custom/config/boards/som3588-cat.csc ./build/config/boards/som3588-cat.conf
           cp -rf ./custom/userpatches/* ./build/patch
           cp -rf ./os/userpatches/* ./build/userpatches
-          
           
       - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ inputs.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
