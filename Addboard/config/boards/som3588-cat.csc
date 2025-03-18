@@ -17,6 +17,8 @@ IMAGE_PARTITION_TABLE="gpt"
 function post_family_tweaks__som3588-cat_naming_audios() {
 	display_alert "$BOARD" "Renaming som3588-cat audios" "info"
 
+	sed -i '22i VENDORTEMP="${BOARD_NAME}" ' $SDCARD/etc/update-motd.d/10-armbian-header
+
 	mkdir -p $SDCARD/etc/udev/rules.d/
 	echo 'SUBSYSTEM=="sound", ENV{ID_PATH}=="platform-hdmi1-sound", ENV{SOUND_DESCRIPTION}="HDMI1 Audio"' >> $SDCARD/etc/udev/rules.d/90-naming-audios.rules
 	echo 'SUBSYSTEM=="sound", ENV{ID_PATH}=="platform-hdmiin-sound", ENV{SOUND_DESCRIPTION}="HDMI-In Audio"' >> $SDCARD/etc/udev/rules.d/90-naming-audios.rules
