@@ -69,7 +69,7 @@ env:
 
 jobs:
   Armbian:  
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-22.04  
     strategy:
       matrix:
         RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
@@ -100,10 +100,6 @@ jobs:
       - name: Set Env
         shell: bash
         run: |
-          sudo apt update -y
-          sudo apt-get full-upgrade -y
-          #sudo apt-get install -y software-properties-common
-          
           # userspace decode
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
@@ -149,8 +145,7 @@ jobs:
          
           # copy os userpatches
           mkdir -p  ./build/userpatches
-          cp -rf ./custom/config/* ./build/config
-          cp -rf ./custom/userpatches/* ./build/userpatches
+          cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
           
       - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ inputs.RELEASE }} ${{ inputs.DESKTOP }} ]
@@ -162,6 +157,9 @@ jobs:
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
+          file="${{ inputs.file }}" \
+          skip_tag="${{ inputs.skip_tag }}" \
+          pre_release="${{ inputs.false }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
