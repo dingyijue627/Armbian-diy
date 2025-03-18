@@ -157,9 +157,9 @@ jobs:
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
-          file="${{ inputs.file }}" \
-          skip_tag="${{ inputs.skip_tag }}" \
-          pre_release="${{ inputs.false }}" \
+          file="${{ env.inputs.file }}" \
+          skip_tag="${{ env.inputs.skip_tag }}" \
+          pre_release="${{ env.inputs.false }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
