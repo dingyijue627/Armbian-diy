@@ -124,15 +124,16 @@ jobs:
           
           # file = where version is getting stored, different for stable and nightly
           # skip_tag = we only upload nighlty to GH releases
-          echo "file=nightly" >> $GITHUB_OUTPUT
-          echo "skip_tag=false" >> $GITHUB_OUTPUT
-          echo "pre_release=true" >> $GITHUB_OUTPUT
-          if [ "${{ inputs.nightly || 'no' }}" == "no" ]; then
-              echo "file=stable" >> $GITHUB_OUTPUT
-              echo "skip_tag=true" >> $GITHUB_OUTPUT
-              echo "pre_release=false" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.nightly }}" == "no" ]]; then
+            echo "file="stable"" >> $GITHUB_ENV
+            echo "skip_tag="true"" >> $GITHUB_ENV
+            echo "pre_release="true"" >> $GITHUB_ENV
+          else
+            echo "file="nightly"" >> $GITHUB_ENV
+            echo "skip_tag="false"" >> $GITHUB_ENV
+            echo "pre_release="true"" >> $GITHUB_ENV
           fi
-          
+
           # read version from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
