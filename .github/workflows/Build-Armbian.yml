@@ -68,7 +68,7 @@ on:
         - btrfs
         default: 'ext4'
         
-      nightlybuild:
+      nightly:
         description: 'yes = nighlty, no = stable'
         required: false
         options: [ 'yes', 'no' ]
@@ -128,7 +128,7 @@ jobs:
           echo "file=nightly" >> $GITHUB_OUTPUT
           echo "skip_tag=false" >> $GITHUB_OUTPUT
           echo "pre_release=true" >> $GITHUB_OUTPUT
-          if [ "${{ github.event.inputs.nightlybuild || 'no' }}" == "no" ]; then
+          if [ "${{ inputs.nightly || 'no' }}" == "no" ]; then
               echo "file=stable" >> $GITHUB_OUTPUT
               echo "skip_tag=true" >> $GITHUB_OUTPUT
               echo "pre_release=false" >> $GITHUB_OUTPUT
@@ -157,9 +157,6 @@ jobs:
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
-          file="${{ env.inputs.file }}" \
-          skip_tag="${{ env.inputs.skip_tag }}" \
-          pre_release="${{ env.inputs.false }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ inputs.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
@@ -171,7 +168,10 @@ jobs:
           ENABLE_EXTENSIONS="${{ inputs.EXTENSIONSs || ' '  }}" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
-          BETA="${{ inputs.nightlybuild }}" \
+          BETA="${{ inputs.nightly }}" \
+          file="${{ env.inputs.file }}" \
+          skip_tag="${{ env.inputs.skip_tag }}" \
+          pre_release="${{ env.inputs.false }}" \
           PREFER_DOCKER="${{ inputs.DOCKER}}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
           EXPERT="yes" \
