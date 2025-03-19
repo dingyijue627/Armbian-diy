@@ -169,9 +169,9 @@ jobs:
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
-          file="${{ env.inputs.file }}" \
-          skip_tag="${{ env.inputs.skip_tag }}" \
-          pre_release="${{ env.inputs.false }}" \
+          file="${{ env.file }}" \
+          skip_tag="${{ env.skip_tag }}" \
+          pre_release="${{ env.false }}" \
           PREFER_DOCKER="${{ inputs.DOCKER}}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
           EXPERT="yes" \
