@@ -127,7 +127,7 @@ jobs:
           if [[ "${{ inputs.nightly }}" == "no" ]]; then
             echo "file="stable"" >> $GITHUB_ENV
             echo "skip_tag="true"" >> $GITHUB_ENV
-            echo "pre_release="true"" >> $GITHUB_ENV
+            echo "pre_release="false"" >> $GITHUB_ENV
           else
             echo "file="nightly"" >> $GITHUB_ENV
             echo "skip_tag="false"" >> $GITHUB_ENV
