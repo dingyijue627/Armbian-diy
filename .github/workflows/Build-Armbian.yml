@@ -17,6 +17,19 @@ on:
         - vendor
         - legacy
         default: 'vendor'
+        
+      RELEASE:
+        type: choice
+        description: 'RELEASE branch'
+        options:
+        - jammy
+        - noble
+        - trixie
+        - bookworm
+        - bullseye
+        - oracular
+        - sid
+        default: 'bookworm'
 
       DESKTOP:
         type: choice
@@ -70,9 +83,6 @@ env:
 jobs:
   Armbian:  
     runs-on: ubuntu-22.04  
-    strategy:
-      matrix:
-        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
     steps:
       - name: "Checkout customisations"
         uses: actions/checkout@main
@@ -161,7 +171,7 @@ jobs:
           skip_tag="${{ env.inputs.skip_tag }}" \
           pre_release="${{ env.inputs.false }}" \
           BRANCH="${{ inputs.BRANCH }}" \
-          RELEASE="${{ matrix.RELEASE }}" \
+          RELEASE="${{ inputs.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
           BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
