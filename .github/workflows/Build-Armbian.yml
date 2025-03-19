@@ -171,9 +171,9 @@ jobs:
           BETA="${{ inputs.nightly }}" \
           file="${{ env.file }}" \
           skip_tag="${{ env.skip_tag }}" \
-          pre_release="${{ env.false }}" \
-          PREFER_DOCKER="${{ inputs.DOCKER}}" \
-          ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
+          pre_release="${{ env.pre_release }}" \
+          PREFER_DOCKER="${{ inputs.DOCKER }}" \
+          ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
           EXPERT="yes" \
           VENDOR=Armbian \
           IMAGE_XZ_COMPRESSION_RATIO=5 \
