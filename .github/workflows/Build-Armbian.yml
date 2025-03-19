@@ -56,11 +56,9 @@ on:
         type: choice
         description: 'PREFER DOCKER'
         options:
-        - ubuntu:jammy
-        - ubuntu:noble
-        - debian:bookworm
-        - ubuntu-latest
-        default: 'ubuntu:jammy'
+        - yes
+        - no
+        default: 'yes'
       
       ROOTFS:
         type: choice
@@ -125,14 +123,6 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
           
-          # userspace decode DOCKER
-          if [[ "${{ inputs.DOCKER }}" == "ubuntu-latest" ]]; then
-            echo "PREFER_DOCKER="no"" >> $GITHUB_ENV
-          else
-            echo "PREFER_DOCKER="yes"" >> $GITHUB_ENV
-            echo "DOCKER_ARMBIAN_BASE_IMAGE="${{ inputs.DOCKER }}"" >> $GITHUB_ENV
-          fi
-
           # file = where version is getting stored, different for stable and nightly
           # skip_tag = we only upload nighlty to GH releases
           echo "file=nightly" >> $GITHUB_OUTPUT
@@ -182,8 +172,7 @@ jobs:
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightlybuild }}" \
-          PREFER_DOCKER="${{ env.PREFER_DOCKER}}" \
-          DOCKER_ARMBIAN_BASE_IMAGE="${{ env.DOCKER_ARMBIAN_BASE_IMAGE }}" \
+          PREFER_DOCKER="${{ inputs.DOCKER}}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
           EXPERT="yes" \
           VENDOR=Armbian \
