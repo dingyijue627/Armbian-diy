@@ -54,10 +54,9 @@ on:
 
       DOCKER:
         type: choice
-        description: 'PREFER DOCKER'
-        options:
-        - yes
-        - no
+        description: 'yes = DOCKER, no = Actions'
+        required: false
+        options: [ 'yes', 'no' ]
         default: 'yes'
       
       ROOTFS:
