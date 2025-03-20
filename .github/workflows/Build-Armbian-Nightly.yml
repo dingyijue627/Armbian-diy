@@ -17,7 +17,20 @@ on:
         - vendor
         - legacy
         default: 'vendor'
-
+        
+      DESKTOP:
+        type: choice
+        description: 'DESKTOP'
+        options:
+        - minimal
+        - server
+        - xfce
+        - gnome
+        - cinnamon
+        - i3-wm
+        - kde-plasma
+        default: 'server'
+        
       EXTE_extensions:
         type: choice
         description: "Armbian lists of extensions"
@@ -44,7 +57,7 @@ on:
         - btrfs
         default: 'ext4'
         
-      nightlybuild:
+      NIGHTLY:
         description: 'yes = nighlty, no = stable'
         required: false
         options: [ 'yes', 'no' ]
@@ -60,7 +73,6 @@ jobs:
     strategy:
       matrix:
         RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
-        DESKTOP: [server]
     steps:
       - name: "Checkout customisations"
         uses: actions/checkout@main
@@ -89,16 +101,16 @@ jobs:
         shell: bash
         run: |
           # userspace decode
-          if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
+          if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
-          elif [[ "${{ matrix.DESKTOP }}" == "server" ]]; then
+          elif [[ "${{ inputs.DESKTOP }}" == "server" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
           else
             echo "BUILD_DESKTOP="yes"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
-            echo "DESKTOP_ENVIRONMENT="${{ matrix.DESKTOP }}"" >> $GITHUB_ENV
+            echo "DESKTOP_ENVIRONMENT="${{ inputs.DESKTOP }}"" >> $GITHUB_ENV
             echo "DESKTOP_APPGROUPS_SELECTED="browsers"" >> $GITHUB_ENV
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
@@ -113,13 +125,14 @@ jobs:
 
           # file = where version is getting stored, different for stable and nightly
           # skip_tag = we only upload nighlty to GH releases
-          echo "file=nightly" >> $GITHUB_OUTPUT
-          echo "skip_tag=false" >> $GITHUB_OUTPUT
-          echo "pre_release=true" >> $GITHUB_OUTPUT
-          if [ "${{ github.event.inputs.nightlybuild || 'no' }}" == "no" ]; then
-              echo "file=stable" >> $GITHUB_OUTPUT
-              echo "skip_tag=true" >> $GITHUB_OUTPUT
-              echo "pre_release=false" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.NIGHTLY }}" == "no" ]]; then
+            echo "file="stable"" >> $GITHUB_ENV
+            echo "skip_tag="true"" >> $GITHUB_ENV
+            echo "pre_release="false"" >> $GITHUB_ENV
+          else
+            echo "file="nightly"" >> $GITHUB_ENV
+            echo "skip_tag="false"" >> $GITHUB_ENV
+            echo "pre_release="true"" >> $GITHUB_ENV
           fi
           
           # read version from upstream Armbian OS
@@ -136,14 +149,14 @@ jobs:
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
           
-      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ matrix.DESKTOP }} ]
+      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
         run: |
           # go to build folder
           cd ./build
           # execute build command
           ./compile.sh \
-          REVISION="${{ env.ARMBIAN_VERSION }}" \
+          #REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
@@ -156,7 +169,10 @@ jobs:
           ENABLE_EXTENSIONS="${{ inputs.EXTENSIONSs || ' '  }}" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
-          BETA="${{ inputs.nightlybuild }}" \
+          BETA="${{ inputs.NIGHTLY }}" \
+          file="${{ env.file }}" \
+          skip_tag="${{ env.skip_tag }}" \
+          pre_release="${{ env.pre_release }}" \
           PREFER_DOCKER="${{ env.PREFER_DOCKER}}" \
           DOCKER_ARMBIAN_BASE_IMAGE="${{ env.DOCKER_ARMBIAN_BASE_IMAGE }}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
@@ -179,7 +195,7 @@ jobs:
               <br>
 
               - Board: ${{ inputs.BOARD }} 
-              - Version: V${{ env.ARMBIAN_VERSION }} 
+              - Version: V${{ env.VERSIONOS }} 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
@@ -191,8 +207,8 @@ jobs:
         uses: ncipollo/release-action@main
         if: success()
         with:
-          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          tag: "Armbian_V${{ env.VERSIONOS }}"
+          name: "Armbian_V${{ env.VERSIONOS }}"
           artifacts: "build/output/images/*"
           allowUpdates: true
           removeArtifacts: false
