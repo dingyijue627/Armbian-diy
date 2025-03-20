@@ -173,7 +173,7 @@ jobs:
           cd ./build
           # execute build command
           ./compile.sh \
-          REVISION="${{ env.ARMBIAN_VERSION }}" \
+          #REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ inputs.RELEASE }}" \
@@ -211,7 +211,7 @@ jobs:
               <br>
 
               - Board: ${{ inputs.BOARD }} 
-              - Version: V${{ env.ARMBIAN_VERSION }} 
+              - Version: V${{ env.VERSIONOS }} 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
@@ -223,8 +223,8 @@ jobs:
         uses: ncipollo/release-action@main
         if: success()
         with:
-          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          tag: "Armbian_V${{ env.VERSIONOS }}"
+          name: "Armbian_V${{ env.VERSIONOS }}"
           artifacts: "build/output/images/*"
           allowUpdates: true
           removeArtifacts: false
