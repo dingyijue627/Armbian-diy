@@ -1,4 +1,4 @@
-name: "Build-Armbian-Nightly"
+name: "Build-Armbian-Stable"
 on:
   workflow_dispatch:
     inputs:
@@ -47,7 +47,7 @@ on:
         - ubuntu:noble
         - debian:bookworm
         - ubuntu-latest
-        default: 'ubuntu-latest'
+        default: 'ubuntu:jammy'
       
       ROOTFS:
         type: choice
@@ -62,7 +62,7 @@ on:
         required: false
         options: [ 'yes', 'no' ]
         type: choice
-        default: 'yes'
+        default: 'no'
         
 env:
   TZ: Asia/Shanghai
