@@ -1,4 +1,4 @@
-name: "Build-Armbian"
+name: "Build-Armbian-Nightly"
 on:
   workflow_dispatch:
     inputs:
