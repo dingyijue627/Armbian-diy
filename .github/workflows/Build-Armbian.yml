@@ -80,6 +80,9 @@ env:
 jobs:
   Armbian:  
     runs-on: ubuntu-22.04  
+    strategy:
+      matrix:
+        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
     steps:
       - name: "Checkout customisations"
         uses: actions/checkout@main
