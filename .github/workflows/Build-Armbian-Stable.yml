@@ -13,9 +13,9 @@ on:
         type: choice
         description: 'Kernel branch'
         options:
-        - edge
-        - vendor
         - legacy
+        - vendor
+        - edge
         default: 'vendor'
         
       DESKTOP:
@@ -30,24 +30,13 @@ on:
         - i3-wm
         - kde-plasma
         default: 'server'
-        
-      EXTE_extensions:
-        type: choice
-        description: "Armbian lists of extensions"
-        options:
-        - 
-        - mesa-vpu
-        default: " "
 
       DOCKER:
         type: choice
-        description: 'PREFER DOCKER'
-        options:
-        - ubuntu:jammy
-        - ubuntu:noble
-        - debian:bookworm
-        - ubuntu-latest
-        default: 'ubuntu:jammy'
+        description: 'yes = DOCKER, no = Actions'
+        required: false
+        options: [ 'yes', 'no' ]
+        default: 'no'
       
       ROOTFS:
         type: choice
@@ -57,7 +46,7 @@ on:
         - btrfs
         default: 'ext4'
         
-      NIGHTLY:
+      nightly:
         description: 'yes = nighlty, no = stable'
         required: false
         options: [ 'yes', 'no' ]
@@ -69,7 +58,7 @@ env:
 
 jobs:
   Armbian:  
-    runs-on: ubuntu-22.04 
+    runs-on: ubuntu-22.04  
     strategy:
       matrix:
         RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
@@ -100,7 +89,6 @@ jobs:
       - name: Set Env
         shell: bash
         run: |
-
           sudo apt-get update
           #sudo apt-get install software-properties-common -y
           # 清理 Docker 镜像和软件缓存
@@ -134,17 +122,9 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
           
-          # userspace decode DOCKER
-          if [[ "${{ inputs.DOCKER }}" == "ubuntu-latest" ]]; then
-            echo "PREFER_DOCKER="no"" >> $GITHUB_ENV
-          else
-            echo "PREFER_DOCKER="yes"" >> $GITHUB_ENV
-            echo "DOCKER_ARMBIAN_BASE_IMAGE="${{ inputs.DOCKER }}"" >> $GITHUB_ENV
-          fi
-
           # file = where version is getting stored, different for stable and nightly
           # skip_tag = we only upload nighlty to GH releases
-          if [[ "${{ inputs.NIGHTLY }}" == "no" ]]; then
+          if [[ "${{ inputs.nightly }}" == "no" ]]; then
             echo "file="stable"" >> $GITHUB_ENV
             echo "skip_tag="true"" >> $GITHUB_ENV
             echo "pre_release="false"" >> $GITHUB_ENV
@@ -153,16 +133,11 @@ jobs:
             echo "skip_tag="false"" >> $GITHUB_ENV
             echo "pre_release="true"" >> $GITHUB_ENV
           fi
-          
+
           # read version from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
-          # read VERSION_OVERRIDE from upstream Armbian OS
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          #cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
-         
           # copy os userpatches
           mkdir -p  ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
@@ -175,7 +150,6 @@ jobs:
           cd ./build
           # execute build command
           ./compile.sh \
-          #REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
@@ -185,20 +159,20 @@ jobs:
           DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
           DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
           DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-          ENABLE_EXTENSIONS="${{ inputs.EXTENSIONSs || ' '  }}" \
+          ENABLE_EXTENSIONS="mesa-vpu" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
-          BETA="${{ inputs.NIGHTLY }}" \
+          BETA="${{ inputs.nightly }}" \
           file="${{ env.file }}" \
           skip_tag="${{ env.skip_tag }}" \
           pre_release="${{ env.pre_release }}" \
-          PREFER_DOCKER="${{ env.PREFER_DOCKER}}" \
-          DOCKER_ARMBIAN_BASE_IMAGE="${{ env.DOCKER_ARMBIAN_BASE_IMAGE }}" \
-          ROOTFS_TYPE="${{ inputs.ROOTFS}}" \
+          PREFER_DOCKER="${{ inputs.DOCKER }}" \
+          ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
           EXPERT="yes" \
           VENDOR=Armbian \
           IMAGE_XZ_COMPRESSION_RATIO=8 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+
       - name: "Generate body file"
         if: success()
         run: |
