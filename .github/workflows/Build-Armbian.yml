@@ -107,6 +107,8 @@ jobs:
       - name: Set Env
         shell: bash
         run: |
+          sudo apt-get update
+          sudo apt-get install software-properties-common -y
           # userspace decode
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
