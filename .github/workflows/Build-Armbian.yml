@@ -169,7 +169,7 @@ jobs:
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
           
-      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ inputs.RELEASE }} ${{ inputs.DESKTOP }} ]
+      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
         run: |
           # go to build folder
@@ -179,7 +179,7 @@ jobs:
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
-          RELEASE="${{ inputs.RELEASE }}" \
+          RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
           BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
