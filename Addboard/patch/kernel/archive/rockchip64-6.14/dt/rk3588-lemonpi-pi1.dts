@@ -17,8 +17,8 @@
 #include "rk3588-som3588-cat.dtsi"
 
 / {
-	model = "SOM3588Cat";
-	compatible = "rockchip,som3588-cat", "rockchip,rk3588";
+	model = "LemonPi Pi 1";
+	compatible = "rockchip,lemonpi-pi1", "rockchip,rk3588";
 
 	/* If hdmirx node is disabled, delete the reserved-memory node here. */
 	reserved-memory {
@@ -295,7 +295,7 @@
 			65000	4
 		>;
 	};
-	
+
 	test-power {
 		status = "okay";
 	};

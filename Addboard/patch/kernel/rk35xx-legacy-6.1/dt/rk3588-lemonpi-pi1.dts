@@ -9,16 +9,19 @@
 #include <dt-bindings/usb/pd.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/input/rk-input.h>
+#include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
 #include <dt-bindings/display/rockchip_vop.h>
 #include <dt-bindings/phy/jlsemi-dt-phy.h>
 #include <dt-bindings/sensor-dev.h>
-#include "rk3588-som3588-cat.dtsi"
+#include "rk3588.dtsi"
+#include "rk3588-linux.dtsi"
 
 / {
-	model = "SOM3588Cat";
-	compatible = "rockchip,som3588-cat", "rockchip,rk3588";
+	model = "LemonPi Pi1";
+	compatible = "rockchip,lemonpi-pi1", "rockchip,rk3588";
 
 	/* If hdmirx node is disabled, delete the reserved-memory node here. */
 	reserved-memory {
@@ -37,7 +40,7 @@
 	chosen: chosen {
 		bootargs = "earlycon=uart8250,mmio32,0xfeb50000 console=ttyFIQ0 irqchip.gicv3_pseudo_nmi=0 rcupdate.rcu_expedited=1 rcu_nocbs=all";
 	};
-	
+
 	adc_keys: adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
@@ -295,7 +298,7 @@
 			65000	4
 		>;
 	};
-	
+
 	test-power {
 		status = "okay";
 	};
@@ -1241,8 +1244,8 @@
 
 &mdio0 {
 	rgmii_phy0: phy@0 {
-		reg = <0x00>;
 		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x00>;
 		jl2xxx,led-enable = <(JL2XXX_LED_STATIC_OP_EN | JL1XXX_LED_MODE_EN)>;
 		jl2xxx,led-mode = <(JL2XXX_LED1_LINK10  | \
 				 JL2XXX_LED1_LINK100  | \
@@ -1271,7 +1274,7 @@
 
 /* PCIe30 PHY Port0 & Port1 */
 &pcie30phy {
-	//ckchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
+	rockchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
 	status = "okay";
 };
 

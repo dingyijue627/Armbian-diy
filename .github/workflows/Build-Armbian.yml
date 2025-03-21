@@ -1,4 +1,4 @@
-name: "Build-Armbian-Nightly"
+name: "Build-Armbian"
 on:
   workflow_dispatch:
     inputs:
@@ -8,6 +8,7 @@ on:
         description: 'Board'
         options:
         - som3588-cat
+        - lemonpi-pi1
 
       BRANCH:
         type: choice
@@ -18,19 +19,6 @@ on:
         - legacy
         default: 'vendor'
         
-      RELEASE:
-        type: choice
-        description: 'RELEASE branch'
-        options:
-        - jammy
-        - noble
-        - trixie
-        - bookworm
-        - bullseye
-        - oracular
-        - sid
-        default: 'bookworm'
-
       DESKTOP:
         type: choice
         description: 'DESKTOP'
@@ -44,20 +32,12 @@ on:
         - kde-plasma
         default: 'server'
 
-      EXTE_extensions:
-        type: choice
-        description: "Armbian lists of extensions"
-        options:
-        - 
-        - mesa-vpu
-        default: " "
-
       DOCKER:
         type: choice
         description: 'yes = DOCKER, no = Actions'
         required: false
         options: [ 'yes', 'no' ]
-        default: 'yes'
+        default: 'no'
       
       ROOTFS:
         type: choice
@@ -72,7 +52,7 @@ on:
         required: false
         options: [ 'yes', 'no' ]
         type: choice
-        default: 'yes'
+        default: 'no'
         
 env:
   TZ: Asia/Shanghai
@@ -159,11 +139,6 @@ jobs:
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
-          # read VERSION_OVERRIDE from upstream Armbian OS
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          #cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
-         
           # copy os userpatches
           mkdir -p  ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
@@ -176,7 +151,6 @@ jobs:
           cd ./build
           # execute build command
           ./compile.sh \
-          REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
@@ -186,7 +160,7 @@ jobs:
           DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
           DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
           DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-          ENABLE_EXTENSIONS="${{ inputs.EXTENSIONSs || ' '  }}" \
+          ENABLE_EXTENSIONS="mesa-vpu" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
@@ -199,6 +173,7 @@ jobs:
           VENDOR=Armbian \
           IMAGE_XZ_COMPRESSION_RATIO=8 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+
       - name: "Generate body file"
         if: success()
         run: |
@@ -214,7 +189,7 @@ jobs:
               <br>
 
               - Board: ${{ inputs.BOARD }} 
-              - Version: V${{ env.ARMBIAN_VERSION }} 
+              - Version: V${{ env.VERSIONOS }} 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
@@ -226,8 +201,8 @@ jobs:
         uses: ncipollo/release-action@main
         if: success()
         with:
-          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          tag: "Armbian_V${{ env.VERSIONOS }}"
+          name: "Armbian_V${{ env.VERSIONOS }}"
           artifacts: "build/output/images/*"
           allowUpdates: true
           removeArtifacts: false
