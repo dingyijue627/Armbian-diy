@@ -151,6 +151,10 @@ jobs:
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
           
+          # Add CNflysky kernel
+          sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+
+          
       - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
         run: |
