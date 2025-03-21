@@ -16,9 +16,22 @@ on:
         options:
         - edge
         - vendor
-        - legacy
+        - CNflysky
         default: 'vendor'
         
+      RELEASE:
+        type: choice
+        description: 'RELEASE branch'
+        options:
+        - jammy
+        - noble
+        - trixie
+        - bookworm
+        - bullseye
+        - oracular
+        - sid
+        default: 'bookworm'
+
       DESKTOP:
         type: choice
         description: 'DESKTOP'
@@ -32,6 +45,14 @@ on:
         - kde-plasma
         default: 'server'
 
+        EXTE_extensions:
+          type: choice
+          description: "Armbian lists of extensions"
+          options:
+          - 
+          - mesa-vpu
+          default: " "
+  
       DOCKER:
         type: choice
         description: 'yes = DOCKER, no = Actions'
@@ -39,6 +60,13 @@ on:
         options: [ 'yes', 'no' ]
         default: 'no'
       
+      nightly:
+        description: 'yes = nighlty, no = stable'
+        required: false
+        options: [ 'yes', 'no' ]
+        type: choice
+        default: 'yes'
+
       ROOTFS:
         type: choice
         description: 'ROOTFS TYPE'
@@ -46,25 +74,15 @@ on:
         - ext4
         - btrfs
         default: 'ext4'
-        
-      nightly:
-        description: 'yes = nighlty, no = stable'
-        required: false
-        options: [ 'yes', 'no' ]
-        type: choice
-        default: 'no'
-        
+          
 env:
   TZ: Asia/Shanghai
 
 jobs:
   Armbian:  
     runs-on: ubuntu-22.04  
-    strategy:
-      matrix:
-        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
     steps:
-      - name: "Checkout customisations"
+      - name: "Checkout Armbian board"
         uses: actions/checkout@main
         with:
           fetch-depth: 0
@@ -139,12 +157,20 @@ jobs:
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
+          # read VERSION_OVERRIDE from upstream Armbian OS
+          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
+          #cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
+          [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
+         
           # copy os userpatches
           mkdir -p  ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
-          
-      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
+
+          # Add CNflysky kernel
+          sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+
+      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ inputs.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
         run: |
           # go to build folder
@@ -153,14 +179,14 @@ jobs:
           ./compile.sh \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
-          RELEASE="${{ matrix.RELEASE }}" \
+          RELEASE="${{ inputs.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
           BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
           DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
           DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
           DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-          ENABLE_EXTENSIONS="mesa-vpu" \
+          ENABLE_EXTENSIONS="${{ inputs.EXTENSIONSs || ' '  }}" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
@@ -174,38 +200,9 @@ jobs:
           IMAGE_XZ_COMPRESSION_RATIO=8 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
 
-      - name: "Generate body file"
-        if: success()
-        run: |
-            echo "
-              <p align='center'>
-              <a href='https://www.armbian.com'>
-              <img src='https://raw.githubusercontent.com/armbian/.github/master/profile/tux-two.png' width='400'></a></p>
-              <h1 align=center>Armbian OS</h1>
-              <p align=center>
-              <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
-              <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
-              </p>
-              <br>
-
-              - Board: ${{ inputs.BOARD }} 
-              - Version: V${{ env.VERSIONOS }} 
-              - Verification: sha256sum 
-
-              Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
-
-              <br>
-              &nbsp;
-              </p>" > body.html
-      - name: Upload Armbian to Release 
-        uses: ncipollo/release-action@main
-        if: success()
+      - name: Upload Armbian to  artifact 
+        uses: ctions/upload-artifact@v4
         with:
-          tag: "Armbian_V${{ env.VERSIONOS }}"
           name: "Armbian_V${{ env.VERSIONOS }}"
-          artifacts: "build/output/images/*"
-          allowUpdates: true
-          removeArtifacts: false
-          replacesArtifacts: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          bodyFile: "body.html"
+          path: "build/output/images/*"
+          if-no-files-found: error
