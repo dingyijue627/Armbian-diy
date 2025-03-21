@@ -155,7 +155,7 @@ jobs:
           sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
 
           
-      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
+      - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
         shell: bash
         run: |
           # go to build folder
@@ -163,7 +163,7 @@ jobs:
           # execute build command
           ./compile.sh \
           # REVISION="${{ env.ARMBIAN_VERSION }}" \
-          BOARD="${{ inputs.BOARD }}" \
+          BOARD="${{ matrix.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
@@ -199,7 +199,7 @@ jobs:
               </p>
               <br>
 
-              - Board: ${{ inputs.BOARD }} 
+              - Board: ${{ matrix.BOARD }} 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
