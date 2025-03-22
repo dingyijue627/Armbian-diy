@@ -19,19 +19,6 @@ on:
         - CNflysky
         default: 'vendor'
         
-      RELEASE:
-        type: choice
-        description: 'RELEASE branch'
-        options:
-        - jammy
-        - noble
-        - trixie
-        - bookworm
-        - bullseye
-        - oracular
-        - sid
-        default: 'bookworm'
-
       DESKTOP:
         type: choice
         description: 'DESKTOP'
@@ -81,6 +68,9 @@ env:
 jobs:
   Armbian:  
     runs-on: ubuntu-22.04  
+    strategy:
+      matrix:
+        RELEASE: [noble, trixie, bookworm, oracular]
     steps:
       - name: "Checkout Armbian board"
         uses: actions/checkout@main
@@ -141,18 +131,6 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
           
-          # file = where version is getting stored, different for stable and nightly
-          # skip_tag = we only upload nighlty to GH releases
-          if [[ "${{ inputs.nightly }}" == "no" ]]; then
-            echo "file="stable"" >> $GITHUB_ENV
-            echo "skip_tag="true"" >> $GITHUB_ENV
-            echo "pre_release="false"" >> $GITHUB_ENV
-          else
-            echo "file="nightly"" >> $GITHUB_ENV
-            echo "skip_tag="false"" >> $GITHUB_ENV
-            echo "pre_release="true"" >> $GITHUB_ENV
-          fi
-
           # read version from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
@@ -170,7 +148,7 @@ jobs:
           # Add CNflysky kernel
           sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
 
-      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ inputs.RELEASE }} ${{ inputs.DESKTOP }} ]
+      - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ]
         shell: bash
         run: |
           # go to build folder
@@ -179,7 +157,7 @@ jobs:
           ./compile.sh \
           BOARD="${{ inputs.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
-          RELEASE="${{ inputs.RELEASE }}" \
+          RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
           BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
@@ -190,9 +168,6 @@ jobs:
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
-          file="${{ env.file }}" \
-          skip_tag="${{ env.skip_tag }}" \
-          pre_release="${{ env.pre_release }}" \
           PREFER_DOCKER="${{ inputs.DOCKER }}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
           EXPERT="yes" \
@@ -213,12 +188,16 @@ jobs:
               <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
               </p>
               <br>
+
               - Board: ${{ matrix.BOARD }} 
               - Verification: sha256sum 
+
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
+
               <br>
               &nbsp;
               </p>" > body.html
+
       - name: Upload Armbian to Release 
         uses: ncipollo/release-action@main
         if: success()

@@ -25,21 +25,28 @@ on:
         - kde-plasma
         default: 'server'
 
-      EXTE_extensions:
-        type: choice
-        description: "Armbian lists of extensions"
-        options:
-        - 
-        - mesa-vpu
-        default: " "
-
+        EXTE_extensions:
+          type: choice
+          description: "Armbian lists of extensions"
+          options:
+          - 
+          - mesa-vpu
+          default: " "
+  
       DOCKER:
         type: choice
         description: 'yes = DOCKER, no = Actions'
         required: false
         options: [ 'yes', 'no' ]
-        default: 'yes'
+        default: 'no'
       
+      nightly:
+        description: 'yes = nighlty, no = stable'
+        required: false
+        options: [ 'yes', 'no' ]
+        type: choice
+        default: 'yes'
+
       ROOTFS:
         type: choice
         description: 'ROOTFS TYPE'
@@ -47,14 +54,7 @@ on:
         - ext4
         - btrfs
         default: 'ext4'
-        
-      nightly:
-        description: 'yes = nighlty, no = stable'
-        required: false
-        options: [ 'yes', 'no' ]
-        type: choice
-        default: 'yes'
-        
+          
 env:
   TZ: Asia/Shanghai
 
@@ -63,8 +63,9 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
         BOARD: [som3588-cat, lemonpi-pi1]
+        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
+
     steps:
       - name: "Checkout Armbian board"
         uses: actions/checkout@main
@@ -89,7 +90,7 @@ jobs:
           clean: false
           path: os
     
-      - name: "environment variables"
+      - name: Set Env
         shell: bash
         run: |
           sudo apt-get update
@@ -125,44 +126,30 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
           
-          # file = where version is getting stored, different for stable and nightly
-          # skip_tag = we only upload nighlty to GH releases
-          if [[ "${{ inputs.nightly }}" == "no" ]]; then
-            echo "file="stable"" >> $GITHUB_ENV
-            echo "skip_tag="true"" >> $GITHUB_ENV
-            echo "pre_release="false"" >> $GITHUB_ENV
-          else
-            echo "file="nightly"" >> $GITHUB_ENV
-            echo "skip_tag="false"" >> $GITHUB_ENV
-            echo "pre_release="true"" >> $GITHUB_ENV
-          fi
-
           # read version from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
           # read VERSION_OVERRIDE from upstream Armbian OS
           cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          #cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
           [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
          
           # copy os userpatches
           mkdir -p  ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
-          
+
           # Add CNflysky kernel
           sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
 
-          
-      - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ${{ inputs.DESKTOP }} ]
+      - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]
         shell: bash
         run: |
           # go to build folder
           cd ./build
           # execute build command
           ./compile.sh \
-          # REVISION="${{ env.ARMBIAN_VERSION }}" \
+          REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ matrix.BOARD }}" \
           BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
@@ -176,15 +163,13 @@ jobs:
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
-          file="${{ env.file }}" \
-          skip_tag="${{ env.skip_tag }}" \
-          pre_release="${{ env.pre_release }}" \
           PREFER_DOCKER="${{ inputs.DOCKER }}" \
           ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
           EXPERT="yes" \
           VENDOR=Armbian \
           IMAGE_XZ_COMPRESSION_RATIO=8 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+
       - name: "Generate body file"
         if: success()
         run: |
@@ -207,12 +192,13 @@ jobs:
               <br>
               &nbsp;
               </p>" > body.html
+
       - name: Upload Armbian to Release 
         uses: ncipollo/release-action@main
         if: success()
         with:
-          tag: "Armbian_V${{ env.VERSIONOS }}"
-          name: "Armbian_V${{ env.VERSIONOS }}"
+          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
           artifacts: "build/output/images/*"
           allowUpdates: true
           removeArtifacts: false

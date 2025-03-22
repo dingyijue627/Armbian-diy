@@ -1,5 +1,7 @@
---- a/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts	2025-03-14 02:38:58.000000000 +0800
-+++ b/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts	2025-03-14 02:47:33.067788191 +0800
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts b/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts
+index d2256c50b..f4671f2ab 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-som3588-cat.dts
 @@ -10,19 +10,17 @@
  #include <dt-bindings/gpio/gpio.h>
  #include <dt-bindings/pwm/pwm.h>
@@ -22,7 +24,7 @@
  
  	/* If hdmirx node is disabled, delete the reserved-memory node here. */
  	reserved-memory {
-@@ -184,7 +181,6 @@
+@@ -184,7 +182,6 @@ vbus_typec: vbus-typec {
  		pinctrl-0 = <&typec_vbus_en>;
  	};
  
@@ -30,16 +32,22 @@
  	mipi_dsi0_power: mipi-dsi0-power-regulator {
  		compatible = "regulator-fixed";
  		regulator-name = "mipi_dsi0_power";
-@@ -294,7 +290,7 @@
+@@ -294,10 +291,10 @@ fan: pwm-fan {
  		pwms = <&pwm4 0 5000 0>;
  		cooling-levels = <0 100 150 200 255>;
  		rockchip,temp-trips = <
 -			45000	1
-+			40000	1
- 			50000	2
- 			55000	3
- 			60000	4
-@@ -439,7 +435,6 @@
+-			50000	2
+-			55000	3
+-			60000	4
++			50000	1
++			55000	2
++			60000	3
++			65000	4
+ 		>;
+ 	};
+ 
+@@ -439,7 +436,6 @@ gpio7: gpio-expander@21 {
  	};
  };
  
@@ -47,7 +55,7 @@
  &i2c0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&i2c0m2_xfer>;
-@@ -1288,7 +1283,19 @@
+@@ -1288,7 +1284,19 @@ &pcie3x4 {
  	status = "okay";
  };
  
@@ -68,7 +76,7 @@
  &combphy0_ps {
  	status = "okay";
  };
-@@ -1297,24 +1304,13 @@
+@@ -1297,24 +1305,13 @@ &combphy0_ps {
  &sata0 {
  	status = "okay";
  };
@@ -94,7 +102,7 @@
  /* USB3.1/DP Combo PHY1 */
  &usbdp_phy1 {
  	status = "okay";
-@@ -1402,7 +1398,7 @@
+@@ -1402,7 +1399,7 @@ &u2phy1_otg {
  	status = "okay";
  };
  
@@ -103,7 +111,7 @@
  &combphy2_psu {
  	status = "okay";
  };
-@@ -1477,11 +1473,6 @@
+@@ -1477,11 +1474,6 @@ &route_dp0 {
  	connect = <&vp1_out_dp0>;
  };
  
@@ -115,7 +123,7 @@
  &dp0_in_vp0 {
  	status = "disabled";
  };
-@@ -1494,6 +1485,11 @@
+@@ -1494,6 +1486,11 @@ &dp0_in_vp2 {
  	status = "disabled";
  };
  
@@ -127,7 +135,7 @@
  &hdmi1_in_vp0 {
  	status = "okay";
  };
-@@ -1506,6 +1502,11 @@
+@@ -1506,6 +1503,11 @@ &hdmi1_in_vp2 {
  	status = "disabled";
  };
  
@@ -139,7 +147,7 @@
  &vop {
  	status = "okay";
  	// disable-win-move;
-@@ -1559,11 +1560,6 @@
+@@ -1559,11 +1561,6 @@ &vp3 {
  	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER3>;
  };
  
