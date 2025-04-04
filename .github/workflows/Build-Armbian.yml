@@ -9,7 +9,8 @@ on:
         options:
         - som3588-cat
         - lemonpi-pi1
-
+        default: 'lemonpi-pi1'
+        
       BRANCH:
         type: choice
         description: 'Kernel branch'
@@ -73,7 +74,7 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        RELEASE: [jammy, noble, trixie, bookworm, oracular]
+        RELEASE: [jammy, noble, oracular, plucky, trixie, bookworm, bullseye]
     steps:
       - name: "Checkout Armbian board"
         uses: actions/checkout@main
