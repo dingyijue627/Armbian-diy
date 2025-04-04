@@ -18,20 +18,23 @@ on:
         options:
         - minimal
         - server
-        - xfce
         - gnome
+        - budgie
         - cinnamon
         - i3-wm
         - kde-plasma
+        - mate
+        - xfce
+        - xmonad
         default: 'server'
 
         EXTE_extensions:
           type: choice
           description: "Armbian lists of extensions"
           options:
-          - 
           - mesa-vpu
-          default: " "
+          - 
+          default: "mesa-vpu"
   
       DOCKER:
         type: choice
@@ -45,7 +48,7 @@ on:
         required: false
         options: [ 'yes', 'no' ]
         type: choice
-        default: 'yes'
+        default: 'no'
 
       ROOTFS:
         type: choice
@@ -185,6 +188,7 @@ jobs:
               <br>
 
               - Board: ${{ matrix.BOARD }} 
+              - Kernel: 6.1
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 

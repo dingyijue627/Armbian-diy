@@ -25,20 +25,23 @@ on:
         options:
         - minimal
         - server
-        - xfce
         - gnome
+        - budgie
         - cinnamon
         - i3-wm
         - kde-plasma
+        - mate
+        - xfce
+        - xmonad
         default: 'server'
 
         EXTE_extensions:
           type: choice
           description: "Armbian lists of extensions"
           options:
-          - 
           - mesa-vpu
-          default: " "
+          - 
+          default: "mesa-vpu"
   
       DOCKER:
         type: choice
@@ -52,7 +55,7 @@ on:
         required: false
         options: [ 'yes', 'no' ]
         type: choice
-        default: 'yes'
+        default: 'no'
 
       ROOTFS:
         type: choice
@@ -70,7 +73,7 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        RELEASE: [noble, trixie, bookworm, oracular]
+        RELEASE: [jammy, noble, trixie, bookworm, oracular]
     steps:
       - name: "Checkout Armbian board"
         uses: actions/checkout@main
@@ -136,7 +139,6 @@ jobs:
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
           # read VERSION_OVERRIDE from upstream Armbian OS
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
           #cat os/stable.json | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
           [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
          
@@ -189,7 +191,8 @@ jobs:
               </p>
               <br>
 
-              - Board: ${{ matrix.BOARD }} 
+              - Board: ${{ inputs.BOARD }} 
+              - Kernel: 6.1
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 

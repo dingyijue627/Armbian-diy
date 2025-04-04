@@ -1,8 +1,0 @@
-// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-
-#include "rk3588-som3588-cat.dts"
-
-/ {
-	model = "LemonPi Pi 1";
-	compatible = "rockchip,lemonpi-pi1", "rockchip,rk3588";
-};
