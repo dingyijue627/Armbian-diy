@@ -23,7 +23,7 @@
 / {
 	model = "LemonPi Pi1";
 	compatible = "lemonpi,lemonpi-pi1", "rockchip,rk3588";
-	
+
 	/* If hdmirx node is disabled, delete the reserved-memory node here. */
 	reserved-memory {
 		#address-cells = <2>;
@@ -39,6 +39,7 @@
 	};
 
 	chosen: chosen {
+		stdout-path = "serial2:1500000n8";
 		bootargs = "earlycon=uart8250,mmio32,0xfeb50000 console=ttyFIQ0 irqchip.gicv3_pseudo_nmi=0 rcupdate.rcu_expedited=1 rcu_nocbs=all";
 	};
 
@@ -218,11 +219,11 @@
 		compatible = "rockchip,hdmi";
 		rockchip,mclk-fs = <128>;
 		rockchip,format = "i2s";
-		rockchip,bitclock-master = <&hdmirx_ctrler>;
-		rockchip,frame-master = <&hdmirx_ctrler>;
+		rockchip,bitclock-master = <&hdmi_receiver>;
+		rockchip,frame-master = <&hdmi_receiver>;
 		rockchip,card-name = "rockchip-hdmiin";
 		rockchip,cpu = <&i2s7_8ch>;
-		rockchip,codec = <&hdmirx_ctrler 0>;
+		rockchip,codec = <&hdmi_receiver 0>;
 		rockchip,jack-det;
 	};
 
@@ -315,7 +316,6 @@
  */
 
 /* --- Memory & OPP --- */
-
 &dmc_opp_table {
 	/delete-node/ opp-2750000000;
 };
@@ -357,38 +357,39 @@
 };
 
 &jpege_ccu {
+	compatible = "rockchip,vpu-jpege-ccu";
 	status = "okay";
 };
 
-&jpege0 {
+&vepu121_0 {
 	status = "okay";
 };
 
-&jpege0_mmu {
+&vepu121_0_mmu {
 	status = "okay";
 };
 
-&jpege1 {
+&vepu121_1 {
 	status = "okay";
 };
 
-&jpege1_mmu {
+&vepu121_1_mmu {
 	status = "okay";
 };
 
-&jpege2 {
+&vepu121_2 {
 	status = "okay";
 };
 
-&jpege2_mmu {
+&vepu121_2_mmu {
 	status = "okay";
 };
 
-&jpege3 {
+&vepu121_3 {
 	status = "okay";
 };
 
-&jpege3_mmu {
+&vepu121_3_mmu {
 	status = "okay";
 };
 
@@ -396,7 +397,7 @@
 	status = "okay";
 };
 
-&rga2 {
+&rga {
 	status = "okay";
 };
 
@@ -470,15 +471,11 @@
 	status = "okay";
 };
 
-&vdpu {
+&vpu121 {
 	status = "okay";
 };
 
-&vdpu_mmu {
-	status = "okay";
-};
-
-&vepu {
+&vpu121_mmu {
 	status = "okay";
 };
 
@@ -1277,7 +1274,8 @@
 /* --- PCIe --- */
 
 &pcie30phy { /* M.2 M-Key (x4) */
-	rockchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
+	//rockchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
+	rockchip,rx-common-refclk-mode = <0 0 0 0>;
 	status = "okay";
 };
 
@@ -1342,11 +1340,11 @@
 	status = "okay";
 };
 
-&usbdrd3_0 { /* USB-C OTG Controller */
-	status = "okay";
-};
+//&usbdrd3_0 { /* USB-C OTG Controller */
+//	status = "okay";
+//};
 
-&usbdrd_dwc3_0 { /* USB-C OTG DWC3 Core */
+&usb_host0_xhci { /* usbdrd_dwc3_0 /* USB-C OTG DWC3 Core */
 	dr_mode = "otg";
 	usb-role-switch;
 	status = "okay";
@@ -1377,11 +1375,11 @@
 	status = "okay";
 };
 
-&usbdrd3_1 { /* USB-A (Top) Controller */
-	status = "okay";
-};
+//&usbdrd3_1 { /* USB-A (Top) Controller */
+//	status = "okay";
+//};
 
-&usbdrd_dwc3_1 { /* USB-A (Top) DWC3 Core */
+&usb_host1_xhci {  /* usbdrd_dwc3_1  /* USB-A (Top) DWC3 Core */
 	status = "okay";
 	dr_mode = "host";
 };
@@ -1398,11 +1396,11 @@
 	status = "okay";
 };
 
-&usbhost3_0 { /* USB-A (Bottom Left) Controller */
-	status = "okay";
-};
+//&usbhost3_0 { /* USB-A (Bottom Left) Controller */
+//	status = "okay";
+//};
 
-&usbhost_dwc3_0 { /* USB-A (Bottom Left) DWC3 Core */
+&usb_host2_xhci { /*  usbhost_dwc3_0  /* USB-A (Bottom Left) DWC3 Core */
 	dr_mode = "host";
 	status = "okay";
 };
@@ -1501,7 +1499,7 @@
 /* HDMI 1 Output */
 
 &display_subsystem {
-	clocks = <&hdptxphy0>, <&hdptxphy_hdmi1>;
+	clocks = <&hdptxphy0>, <&hdptxphy1>;
 	clock-names = "hdmi0_phy_pll", "hdmi1_phy_pll";
 };
 
@@ -1515,7 +1513,7 @@
 	status = "disabled";
 };
 
-&hdptxphy_hdmi1 {
+&hdptxphy1 {
 	status = "okay";
 };
 
@@ -1536,7 +1534,7 @@
 };
 
 /* HDMI Input */
-&hdmirx_ctrler {
+&hdmi_receiver {
 	status = "okay";
 	#sound-dai-cells = <1>;
 	/* Effective level used to trigger HPD: 0-low, 1-high */
