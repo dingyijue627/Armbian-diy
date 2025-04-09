@@ -1,6 +1,5 @@
-diff -Nur armbian-rockchip/drivers/dma-buf/dma-buf-sysfs-stats.c linux-rockchip/drivers/dma-buf/dma-buf-sysfs-stats.c
---- armbian-rockchip/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
 @@ -11,6 +11,7 @@
  #include <linux/printk.h>
  #include <linux/slab.h>
@@ -103,9 +102,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/dma-buf-sysfs-stats.c linux-rockchip/
 -	dmabuf->sysfs_entry = NULL;
 -	return ret;
  }
-diff -Nur armbian-rockchip/drivers/dma-buf/dma-buf.c linux-rockchip/drivers/dma-buf/dma-buf.c
---- armbian-rockchip/drivers/dma-buf/dma-buf.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/dma-buf.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/dma-buf.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/dma-buf.c	2025-04-08 04:02:08.077134450 +0800
 @@ -27,6 +27,7 @@
  #include <linux/mm.h>
  #include <linux/mount.h>
@@ -242,9 +240,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/dma-buf.c linux-rockchip/drivers/dma-
  #ifdef CONFIG_DEBUG_FS
  static int dma_buf_debug_show(struct seq_file *s, void *unused)
  {
-diff -Nur armbian-rockchip/drivers/dma-buf/dma-fence-unwrap.c linux-rockchip/drivers/dma-buf/dma-fence-unwrap.c
---- armbian-rockchip/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -76,11 +76,16 @@
  		dma_fence_unwrap_for_each(tmp, &iter[i], fences[i]) {
  			if (!dma_fence_is_signaled(tmp)) {
@@ -266,9 +263,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/dma-fence-unwrap.c linux-rockchip/dri
  			}
  		}
  	}
-diff -Nur armbian-rockchip/drivers/dma-buf/dma-heap.c linux-rockchip/drivers/dma-buf/dma-heap.c
---- armbian-rockchip/drivers/dma-buf/dma-heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/dma-heap.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/dma-heap.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/dma-heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -31,6 +31,7 @@
   * @heap_devt		heap device node
   * @list		list head connecting to list of heaps
@@ -537,9 +533,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/dma-heap.c linux-rockchip/drivers/dma
 +	return ret;
  }
  subsys_initcall(dma_heap_init);
-diff -Nur armbian-rockchip/drivers/dma-buf/dma-resv.c linux-rockchip/drivers/dma-buf/dma-resv.c
---- armbian-rockchip/drivers/dma-buf/dma-resv.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/dma-resv.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/dma-resv.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/dma-resv.c	2025-04-08 04:02:08.077134450 +0800
 @@ -296,7 +296,7 @@
  
  		dma_resv_list_entry(fobj, i, obj, &old, &old_usage);
@@ -549,9 +544,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/dma-resv.c linux-rockchip/drivers/dma
  		    dma_fence_is_signaled(old)) {
  			dma_resv_list_set(fobj, i, fence, usage);
  			dma_fence_put(old);
-diff -Nur armbian-rockchip/drivers/dma-buf/sync_file.c linux-rockchip/drivers/dma-buf/sync_file.c
---- armbian-rockchip/drivers/dma-buf/sync_file.c	2025-04-08 03:58:28.327138230 +0800
-+++ linux-rockchip/drivers/dma-buf/sync_file.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/sync_file.c	2025-04-08 03:58:28.327138230 +0800
++++ d/drivers/dma-buf/sync_file.c	2025-04-08 04:02:08.077134450 +0800
 @@ -268,10 +268,13 @@
  		sizeof(info->driver_name));
  
@@ -569,9 +563,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/sync_file.c linux-rockchip/drivers/dm
  
  	return info->status;
  }
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/cma_heap.c linux-rockchip/drivers/dma-buf/heaps/cma_heap.c
---- armbian-rockchip/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -99,9 +99,10 @@
  {
  	struct dma_heap_attachment *a = attachment->priv;
@@ -601,9 +594,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/cma_heap.c linux-rockchip/drive
  MODULE_DESCRIPTION("DMA-BUF CMA Heap");
  MODULE_LICENSE("GPL v2");
 +MODULE_IMPORT_NS(DMA_BUF);
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/rk_cma_heap.c linux-rockchip/drivers/dma-buf/heaps/rk_cma_heap.c
---- armbian-rockchip/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -9,7 +9,7 @@
   * Copyright (C) 2019 Texas Instruments Incorporated - http://www.ti.com/
   *	Andrew F. Davis <afd@ti.com>
@@ -684,9 +676,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/rk_cma_heap.c linux-rockchip/dr
  MODULE_DESCRIPTION("DMA-BUF CMA Heap");
  MODULE_LICENSE("GPL");
 +MODULE_IMPORT_NS(DMA_BUF);
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/rk_system_heap.c linux-rockchip/drivers/dma-buf/heaps/rk_system_heap.c
---- armbian-rockchip/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 03:58:28.317138230 +0800
++++ d/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -4,7 +4,7 @@
   *
   * Copyright (C) 2011 Google, Inc.
@@ -852,9 +843,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/rk_system_heap.c linux-rockchip
  module_init(system_heap_create);
  MODULE_LICENSE("GPL v2");
 +MODULE_IMPORT_NS(DMA_BUF);
-diff -Nur armbian-rockchip/include/linux/dma-buf.h linux-rockchip/include/linux/dma-buf.h
---- armbian-rockchip/include/linux/dma-buf.h	2025-04-08 03:58:28.327138230 +0800
-+++ linux-rockchip/include/linux/dma-buf.h	2025-04-08 04:02:17.777139225 +0800
+--- a/include/linux/dma-buf.h	2025-04-08 03:58:28.327138230 +0800
++++ d/include/linux/dma-buf.h	2025-04-08 04:02:17.777139225 +0800
 @@ -22,6 +22,7 @@
  #include <linux/fs.h>
  #include <linux/dma-fence.h>
@@ -947,9 +937,8 @@ diff -Nur armbian-rockchip/include/linux/dma-buf.h linux-rockchip/include/linux/
  void dma_buf_vunmap_unlocked(struct dma_buf *dmabuf, struct iosys_map *map);
 +
  #endif /* __DMA_BUF_H__ */
-diff -Nur armbian-rockchip/include/linux/dma-heap.h linux-rockchip/include/linux/dma-heap.h
---- armbian-rockchip/include/linux/dma-heap.h	2025-04-08 03:58:28.327138230 +0800
-+++ linux-rockchip/include/linux/dma-heap.h	2025-04-08 04:02:17.777139225 +0800
+--- a/include/linux/dma-heap.h	2025-04-08 03:58:28.327138230 +0800
++++ d/include/linux/dma-heap.h	2025-04-08 04:02:17.777139225 +0800
 @@ -18,6 +18,7 @@
  /**
   * struct dma_heap_ops - ops to operate on a given heap
@@ -1007,9 +996,8 @@ diff -Nur armbian-rockchip/include/linux/dma-heap.h linux-rockchip/include/linux
 +			    unsigned int fd_flags,
 +			    unsigned int heap_flags);
  #endif /* _DMA_HEAPS_H */
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.c linux-rockchip/drivers/dma-buf/heaps/deferred-free-helper.c
---- armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.c	1970-01-01 08:00:00.000000000 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/deferred-free-helper.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/deferred-free-helper.c	1970-01-01 08:00:00.000000000 +0800
++++ d/drivers/dma-buf/heaps/deferred-free-helper.c	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,138 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -1149,9 +1137,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.c linux-ro
 +module_init(deferred_freelist_init);
 +MODULE_LICENSE("GPL v2");
 +
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.h linux-rockchip/drivers/dma-buf/heaps/deferred-free-helper.h
---- armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.h	1970-01-01 08:00:00.000000000 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/deferred-free-helper.h	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/deferred-free-helper.h	1970-01-01 08:00:00.000000000 +0800
++++ d/drivers/dma-buf/heaps/deferred-free-helper.h	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,55 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
@@ -1208,9 +1195,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/deferred-free-helper.h linux-ro
 +				enum df_reason reason),
 +		   size_t nr_pages);
 +#endif
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/page_pool.c linux-rockchip/drivers/dma-buf/heaps/page_pool.c
---- armbian-rockchip/drivers/dma-buf/heaps/page_pool.c	1970-01-01 08:00:00.000000000 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/page_pool.c	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/page_pool.c	1970-01-01 08:00:00.000000000 +0800
++++ d/drivers/dma-buf/heaps/page_pool.c	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,294 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -1506,9 +1492,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/page_pool.c linux-rockchip/driv
 +}
 +module_init(dmabuf_page_pool_init_shrinker);
 +MODULE_LICENSE("GPL v2");
-diff -Nur armbian-rockchip/drivers/dma-buf/heaps/page_pool.h linux-rockchip/drivers/dma-buf/heaps/page_pool.h
---- armbian-rockchip/drivers/dma-buf/heaps/page_pool.h	1970-01-01 08:00:00.000000000 +0800
-+++ linux-rockchip/drivers/dma-buf/heaps/page_pool.h	2025-04-08 04:02:08.077134450 +0800
+--- a/drivers/dma-buf/heaps/page_pool.h	1970-01-01 08:00:00.000000000 +0800
++++ d/drivers/dma-buf/heaps/page_pool.h	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,27 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -1537,9 +1522,8 @@ diff -Nur armbian-rockchip/drivers/dma-buf/heaps/page_pool.h linux-rockchip/driv
 +unsigned long dmabuf_page_pool_get_size(struct dmabuf_page_pool *pool);
 +
 +#endif /* _DMABUF_PAGE_POOL_H */
-diff -Nur armbian-rockchip/include/linux/android_kabi.h linux-rockchip/include/linux/android_kabi.h
---- armbian-rockchip/include/linux/android_kabi.h	1970-01-01 08:00:00.000000000 +0800
-+++ linux-rockchip/include/linux/android_kabi.h	2025-04-08 04:02:17.727139200 +0800
+--- a/include/linux/android_kabi.h	1970-01-01 08:00:00.000000000 +0800
++++ d/include/linux/android_kabi.h	2025-04-08 04:02:17.727139200 +0800
 @@ -0,0 +1,117 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +/*
