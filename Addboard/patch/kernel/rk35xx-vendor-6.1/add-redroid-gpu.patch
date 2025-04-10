@@ -1,5 +1,109 @@
 --- a/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
+@@ -11,6 +11,7 @@
+ #include <linux/printk.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
++#include <linux/workqueue.h>
+ 
+ #include "dma-buf-sysfs-stats.h"
+ 
+@@ -168,35 +169,76 @@
+ 	kset_unregister(dma_buf_stats_kset);
+ }
+ 
++struct dma_buf_create_sysfs_entry {
++	struct dma_buf *dmabuf;
++	struct work_struct work;
++};
++
++union dma_buf_create_sysfs_work_entry {
++	struct dma_buf_create_sysfs_entry create_entry;
++	struct dma_buf_sysfs_entry sysfs_entry;
++};
++
++static void sysfs_add_workfn(struct work_struct *work)
++{
++	struct dma_buf_create_sysfs_entry *create_entry =
++		container_of(work, struct dma_buf_create_sysfs_entry, work);
++	struct dma_buf *dmabuf = create_entry->dmabuf;
++
++	/*
++	 * A dmabuf is ref-counted via its file member. If this handler holds the only
++	 * reference to the dmabuf, there is no need for sysfs kobject creation. This is an
++	 * optimization and a race; when the reference count drops to 1 immediately after
++	 * this check it is not harmful as the sysfs entry will still get cleaned up in
++	 * dma_buf_stats_teardown, which won't get called until the final dmabuf reference
++	 * is released, and that can't happen until the end of this function.
++	 */
++	if (file_count(dmabuf->file) > 1) {
++		dmabuf->sysfs_entry->dmabuf = dmabuf;
++		/*
++		 * kobject_init_and_add expects kobject to be zero-filled, but we have populated it
++		 * (the sysfs_add_work union member) to trigger this work function.
++		 */
++		memset(&dmabuf->sysfs_entry->kobj, 0, sizeof(dmabuf->sysfs_entry->kobj));
++		dmabuf->sysfs_entry->kobj.kset = dma_buf_per_buffer_stats_kset;
++		if (kobject_init_and_add(&dmabuf->sysfs_entry->kobj, &dma_buf_ktype, NULL,
++						"%lu", file_inode(dmabuf->file)->i_ino)) {
++			kobject_put(&dmabuf->sysfs_entry->kobj);
++			dmabuf->sysfs_entry = NULL;
++		}
++	} else {
++		/*
++		 * Free the sysfs_entry and reset the pointer so dma_buf_stats_teardown doesn't
++		 * attempt to operate on it.
++		 */
++		kfree(dmabuf->sysfs_entry);
++		dmabuf->sysfs_entry = NULL;
++	}
++	dma_buf_put(dmabuf);
++}
++
+ int dma_buf_stats_setup(struct dma_buf *dmabuf, struct file *file)
+ {
+-	struct dma_buf_sysfs_entry *sysfs_entry;
+-	int ret;
++	struct dma_buf_create_sysfs_entry *create_entry;
++	union dma_buf_create_sysfs_work_entry *work_entry;
+ 
+ 	if (!dmabuf->exp_name) {
+ 		pr_err("exporter name must not be empty if stats needed\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	sysfs_entry = kzalloc(sizeof(struct dma_buf_sysfs_entry), GFP_KERNEL);
+-	if (!sysfs_entry)
++	work_entry = kmalloc(sizeof(union dma_buf_create_sysfs_work_entry), GFP_KERNEL);
++	if (!work_entry)
+ 		return -ENOMEM;
+ 
+-	sysfs_entry->kobj.kset = dma_buf_per_buffer_stats_kset;
+-	sysfs_entry->dmabuf = dmabuf;
++	dmabuf->sysfs_entry = &work_entry->sysfs_entry;
+ 
+-	dmabuf->sysfs_entry = sysfs_entry;
++	create_entry = &work_entry->create_entry;
++	create_entry->dmabuf = dmabuf;
+ 
+-	/* create the directory for buffer stats */
+-	ret = kobject_init_and_add(&sysfs_entry->kobj, &dma_buf_ktype, NULL,
+-				   "%lu", file_inode(file)->i_ino);
+-	if (ret)
+-		goto err_sysfs_dmabuf;
++	INIT_WORK(&create_entry->work, sysfs_add_workfn);
++	get_dma_buf(dmabuf); /* This reference will be dropped in sysfs_add_workfn. */
++	schedule_work(&create_entry->work);
+ 
+ 	return 0;
+-
+-err_sysfs_dmabuf:
+-	kobject_put(&sysfs_entry->kobj);
+-	dmabuf->sysfs_entry = NULL;
+-	return ret;
+ }
+--- a/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 03:58:28.317138230 +0800
++++ b/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
 @@ -11,6 +11,7 @@
  #include <linux/printk.h>
  #include <linux/slab.h>
@@ -103,7 +207,7 @@
 -	return ret;
  }
 --- a/drivers/dma-buf/dma-buf.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/dma-buf.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/dma-buf.c	2025-04-08 04:02:08.077134450 +0800
 @@ -27,6 +27,7 @@
  #include <linux/mm.h>
  #include <linux/mount.h>
@@ -241,7 +345,7 @@
  static int dma_buf_debug_show(struct seq_file *s, void *unused)
  {
 --- a/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/dma-fence-unwrap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -76,11 +76,16 @@
  		dma_fence_unwrap_for_each(tmp, &iter[i], fences[i]) {
  			if (!dma_fence_is_signaled(tmp)) {
@@ -264,7 +368,7 @@
  		}
  	}
 --- a/drivers/dma-buf/dma-heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/dma-heap.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/dma-heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -31,6 +31,7 @@
   * @heap_devt		heap device node
   * @list		list head connecting to list of heaps
@@ -534,7 +638,7 @@
  }
  subsys_initcall(dma_heap_init);
 --- a/drivers/dma-buf/dma-resv.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/dma-resv.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/dma-resv.c	2025-04-08 04:02:08.077134450 +0800
 @@ -296,7 +296,7 @@
  
  		dma_resv_list_entry(fobj, i, obj, &old, &old_usage);
@@ -545,7 +649,7 @@
  			dma_resv_list_set(fobj, i, fence, usage);
  			dma_fence_put(old);
 --- a/drivers/dma-buf/sync_file.c	2025-04-08 03:58:28.327138230 +0800
-+++ d/drivers/dma-buf/sync_file.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/sync_file.c	2025-04-08 04:02:08.077134450 +0800
 @@ -268,10 +268,13 @@
  		sizeof(info->driver_name));
  
@@ -564,7 +668,7 @@
  	return info->status;
  }
 --- a/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/cma_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -99,9 +99,10 @@
  {
  	struct dma_heap_attachment *a = attachment->priv;
@@ -595,7 +699,7 @@
  MODULE_LICENSE("GPL v2");
 +MODULE_IMPORT_NS(DMA_BUF);
 --- a/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/rk_cma_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -9,7 +9,7 @@
   * Copyright (C) 2019 Texas Instruments Incorporated - http://www.ti.com/
   *	Andrew F. Davis <afd@ti.com>
@@ -677,7 +781,7 @@
  MODULE_LICENSE("GPL");
 +MODULE_IMPORT_NS(DMA_BUF);
 --- a/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 03:58:28.317138230 +0800
-+++ d/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/rk_system_heap.c	2025-04-08 04:02:08.077134450 +0800
 @@ -4,7 +4,7 @@
   *
   * Copyright (C) 2011 Google, Inc.
@@ -844,7 +948,7 @@
  MODULE_LICENSE("GPL v2");
 +MODULE_IMPORT_NS(DMA_BUF);
 --- a/include/linux/dma-buf.h	2025-04-08 03:58:28.327138230 +0800
-+++ d/include/linux/dma-buf.h	2025-04-08 04:02:17.777139225 +0800
++++ b/include/linux/dma-buf.h	2025-04-08 04:02:17.777139225 +0800
 @@ -22,6 +22,7 @@
  #include <linux/fs.h>
  #include <linux/dma-fence.h>
@@ -938,7 +1042,7 @@
 +
  #endif /* __DMA_BUF_H__ */
 --- a/include/linux/dma-heap.h	2025-04-08 03:58:28.327138230 +0800
-+++ d/include/linux/dma-heap.h	2025-04-08 04:02:17.777139225 +0800
++++ b/include/linux/dma-heap.h	2025-04-08 04:02:17.777139225 +0800
 @@ -18,6 +18,7 @@
  /**
   * struct dma_heap_ops - ops to operate on a given heap
@@ -997,7 +1101,7 @@
 +			    unsigned int heap_flags);
  #endif /* _DMA_HEAPS_H */
 --- a/drivers/dma-buf/heaps/deferred-free-helper.c	1970-01-01 08:00:00.000000000 +0800
-+++ d/drivers/dma-buf/heaps/deferred-free-helper.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/deferred-free-helper.c	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,138 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -1138,7 +1242,7 @@
 +MODULE_LICENSE("GPL v2");
 +
 --- a/drivers/dma-buf/heaps/deferred-free-helper.h	1970-01-01 08:00:00.000000000 +0800
-+++ d/drivers/dma-buf/heaps/deferred-free-helper.h	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/deferred-free-helper.h	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,55 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
@@ -1196,7 +1300,7 @@
 +		   size_t nr_pages);
 +#endif
 --- a/drivers/dma-buf/heaps/page_pool.c	1970-01-01 08:00:00.000000000 +0800
-+++ d/drivers/dma-buf/heaps/page_pool.c	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/page_pool.c	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,294 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -1493,7 +1597,7 @@
 +module_init(dmabuf_page_pool_init_shrinker);
 +MODULE_LICENSE("GPL v2");
 --- a/drivers/dma-buf/heaps/page_pool.h	1970-01-01 08:00:00.000000000 +0800
-+++ d/drivers/dma-buf/heaps/page_pool.h	2025-04-08 04:02:08.077134450 +0800
++++ b/drivers/dma-buf/heaps/page_pool.h	2025-04-08 04:02:08.077134450 +0800
 @@ -0,0 +1,27 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -1523,7 +1627,7 @@
 +
 +#endif /* _DMABUF_PAGE_POOL_H */
 --- a/include/linux/android_kabi.h	1970-01-01 08:00:00.000000000 +0800
-+++ d/include/linux/android_kabi.h	2025-04-08 04:02:17.727139200 +0800
++++ b/include/linux/android_kabi.h	2025-04-08 04:02:17.727139200 +0800
 @@ -0,0 +1,117 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +/*

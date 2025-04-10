@@ -36,14 +36,14 @@ on:
         - xmonad
         default: 'server'
 
-        EXTE_extensions:
-          type: choice
-          description: "Armbian lists of extensions"
-          options:
-          - mesa-vpu
-          - 
-          default: "mesa-vpu"
-  
+      EXTE_extensions:
+        type: choice
+        description: "Armbian lists of extensions"
+        options:
+        - mesa-vpu
+        -  
+        default: "mesa-vpu"
+
       DOCKER:
         type: choice
         description: 'yes = DOCKER, no = Actions'
