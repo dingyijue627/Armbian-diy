@@ -1,3 +1,14 @@
+--- a/drivers/dma-buf/heaps/Makefile	2025-04-08 02:21:05.034522698 +0800
++++ b/drivers/dma-buf/heaps/Makefile	2025-04-08 04:02:08.077134450 +0800
+@@ -1,4 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+-obj-$(CONFIG_DMABUF_HEAPS_SYSTEM)	+= system_heap.o
+-obj-$(CONFIG_DMABUF_HEAPS_CMA)		+= cma_heap.o
++obj-$(CONFIG_DMABUF_HEAPS_DEFERRED_FREE) += deferred-free-helper.o
++obj-$(CONFIG_DMABUF_HEAPS_PAGE_POOL)	+= page_pool.o
++obj-$(CONFIG_DMABUF_HEAPS_SYSTEM)	+= rk_system_heap.o
++obj-$(CONFIG_DMABUF_HEAPS_CMA)		+= rk_cma_heap.o
+ obj-$(CONFIG_DMABUF_HEAPS_SRAM)	+= sram_heap.o
 --- a/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 03:58:28.317138230 +0800
 +++ b/drivers/dma-buf/dma-buf-sysfs-stats.c	2025-04-08 04:02:08.077134450 +0800
 @@ -11,6 +11,7 @@

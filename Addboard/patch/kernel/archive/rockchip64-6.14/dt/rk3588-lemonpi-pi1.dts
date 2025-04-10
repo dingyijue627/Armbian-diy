@@ -38,11 +38,11 @@
 		};
 	};
 
-	chosen: chosen {
-		stdout-path = "serial2:1500000n8";
+	chosen {
 		bootargs = "earlycon=uart8250,mmio32,0xfeb50000 console=ttyFIQ0 irqchip.gicv3_pseudo_nmi=0 rcupdate.rcu_expedited=1 rcu_nocbs=all";
+		stdout-path = "serial2:1500000n8";
 	};
-
+	
 	adc_keys: adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
