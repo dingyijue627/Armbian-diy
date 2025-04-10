@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        RELEASE: [jammy, noble, oracular, plucky, bookworm, bullseye]
+        RELEASE: [jammy, noble, oracular, bookworm, bullseye]
     steps:
       - name: "Checkout Armbian board"
         uses: actions/checkout@main
