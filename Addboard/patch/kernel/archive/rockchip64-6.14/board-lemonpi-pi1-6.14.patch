@@ -1,4 +1,3 @@
-diff -Nur a/include/dt-bindings/sensor-dev.h b/include/dt-bindings/sensor-dev.h
 --- a/include/dt-bindings/sensor-dev.h	2025-04-10 00:06:34.412223398 +0800
 +++ b/include/dt-bindings/sensor-dev.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,18 +0,0 @@
@@ -20,7 +19,6 @@ diff -Nur a/include/dt-bindings/sensor-dev.h b/include/dt-bindings/sensor-dev.h
 -#define	SENSOR_NUM_TYPES 10
 -
 -#endif
-diff -Nur a/include/dt-bindings/display/drm_mipi_dsi.h b/include/dt-bindings/display/drm_mipi_dsi.h
 --- a/include/dt-bindings/display/drm_mipi_dsi.h	2025-04-10 00:02:16.862210656 +0800
 +++ b/include/dt-bindings/display/drm_mipi_dsi.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,53 +0,0 @@
@@ -77,7 +75,6 @@ diff -Nur a/include/dt-bindings/display/drm_mipi_dsi.h b/include/dt-bindings/dis
 -#define MIPI_CSI_FMT_RAW10		0x11
 -
 -#endif /* __DRM_MIPI_DSI__ */
-diff -Nur a/include/dt-bindings/display/rockchip_vop.h b/include/dt-bindings/display/rockchip_vop.h
 --- a/include/dt-bindings/display/rockchip_vop.h	2025-04-10 00:02:46.982210704 +0800
 +++ b/include/dt-bindings/display/rockchip_vop.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,23 +0,0 @@
@@ -104,7 +101,6 @@ diff -Nur a/include/dt-bindings/display/rockchip_vop.h b/include/dt-bindings/dis
 -#define	ROCKCHIP_VOP2_PHY_ID_INVALID	-1
 -
 -#endif
-diff -Nur a/include/dt-bindings/phy/jlsemi-dt-phy.h b/include/dt-bindings/phy/jlsemi-dt-phy.h
 --- a/include/dt-bindings/phy/jlsemi-dt-phy.h	2025-04-10 00:03:44.092227079 +0800
 +++ b/include/dt-bindings/phy/jlsemi-dt-phy.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,341 +0,0 @@
@@ -449,7 +445,6 @@ diff -Nur a/include/dt-bindings/phy/jlsemi-dt-phy.h b/include/dt-bindings/phy/jl
 -
 -/*************************************************************************/
 -#endif
-diff -Nur a/include/dt-bindings/soc/rockchip-system-status.h b/include/dt-bindings/soc/rockchip-system-status.h
 --- a/include/dt-bindings/soc/rockchip-system-status.h	2025-04-10 00:11:22.262206865 +0800
 +++ b/include/dt-bindings/soc/rockchip-system-status.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,63 +0,0 @@
@@ -516,8 +511,6 @@ diff -Nur a/include/dt-bindings/soc/rockchip-system-status.h b/include/dt-bindin
 -#define DMC_WAIT_MODE_EBC_VBANK	(0x1 << 5)
 -
 -#endif
-
-diff -Nur a/include/dt-bindings/suspend/rockchip-rk3588.h b/include/dt-bindings/suspend/rockchip-rk3588.h
 --- a/include/dt-bindings/suspend/rockchip-rk3588.h	2025-04-10 00:09:10.082207866 +0800
 +++ b/include/dt-bindings/suspend/rockchip-rk3588.h	1970-01-01 08:00:00.000000000 +0800
 @@ -1,88 +0,0 @@
