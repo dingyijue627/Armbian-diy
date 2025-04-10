@@ -70,7 +70,7 @@ jobs:
     strategy:
       matrix:
         BOARD: [som3588-cat, lemonpi-pi1]
-        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, sid]
+        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, plucky, sid]
 
     steps:
       - name: "Checkout Armbian board"
