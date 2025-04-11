@@ -42,10 +42,8 @@ on:
       ENABLE_EXTENSIONS:
         type: choice
         description: "Armbian lists of extensions"
-        options:
-        - mesa-vpu
-        - no
-        default: "mesa-vpu"
+        options: [ 'mesa-vpu', ' ' ]
+        default: " "
 
       DOCKER:
         type: choice
@@ -138,13 +136,6 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
 
-          # Armbian lists of extensions
-          if [[ "${{ inputs.ENABLE_EXTENSIONS }}" == "no" ]]; then
-            echo "ENABLE_EXTENSIONS=" "" >> $GITHUB_ENV
-          else
-            echo "ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS }}"" >> $GITHUB_ENV
-          fi
-
           # read version from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
@@ -180,7 +171,7 @@ jobs:
           DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
           DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
           DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-          ENABLE_EXTENSIONS="${{ env.ENABLE_EXTENSIONS || ' '  }}" \
+          ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS || ' '  }}" \
           BOARD_FIRMWARE_INSTALL="-full" \
           SHARE_LOG="yes" \
           BETA="${{ inputs.nightly }}" \
@@ -206,7 +197,7 @@ jobs:
               <br>
 
               - Board: ${{ inputs.BOARD }} 
-              - Kernel: 6.1 6.14
+              - Kernel: ${{ inputs.BRANCH }} 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
