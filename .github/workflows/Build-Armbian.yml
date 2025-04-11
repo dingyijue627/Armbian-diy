@@ -104,23 +104,6 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          #sudo apt-get install software-properties-common -y
-          # 清理 Docker 镜像和软件缓存
-          docker_images_ids=$(docker images -q)
-          if [ -n "$docker_images_ids" ]; then
-            docker rmi $docker_images_ids
-          fi
-          docker image prune -a -f
-          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E  apt-get autoclean
-          sudo -E apt-get clean
-          sudo -E  apt-get autoremove
-          dpkg --list | grep "^rc"
-          dpkg --list | grep "^rc" | cut -d " " -f 3
-          dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs sudo dpkg --purge
-          
           # userspace decode
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
