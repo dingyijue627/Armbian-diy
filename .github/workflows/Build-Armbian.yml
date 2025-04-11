@@ -152,8 +152,7 @@ jobs:
           # Add CNflysky kernel
           sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
           # Add MAINTAINER
-          sed -i '75i config/boards/lemonpi-pi1.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
-          sed -i '75i config/boards/som3588-cat.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
+          sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
       - name: Compile Armbian [ ${{ inputs.BOARD }} ${{ matrix.RELEASE }} ]
         shell: bash
@@ -188,7 +187,7 @@ jobs:
             echo "
               <p align='center'>
               <a href='https://www.armbian.com'>
-              <img src='https://raw.githubusercontent.com/armbian/.github/master/profile/tux-two.png' width='400'></a></p>
+              <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
               <h1 align=center>Armbian OS</h1>
               <p align=center>
               <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
