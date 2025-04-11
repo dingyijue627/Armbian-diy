@@ -1,11 +1,11 @@
 config:
 
   # Just some info stuff; not used by the patching scripts
-  name: rk35xx-6.1
+  name: rk3588-6.1
   kind: kernel
-  type: legacy # or: legacy
+  type: CNflysky # or: CNflysky
   branch: rk-6.1-rkr4.1
-  last-known-good-tag: v6.1.84
+  last-known-good-tag: v6.1.85
 
   # .dts files in these directories will be copied as-is to the build tree; later ones overwrite earlier ones.
   # This is meant to provide a way to "add a board DTS" without having to null-patch them in.
