@@ -677,6 +677,16 @@ diff -Nur a/drivers/dma-buf/heaps/deferred-free-helper.h b/drivers/dma-buf/heaps
 +				enum df_reason reason),
 +		   size_t nr_pages);
 +#endif
+diff -Nur a/drivers/dma-buf/heaps/Makefile b/drivers/dma-buf/heaps/Makefile
+--- a/drivers/dma-buf/heaps/Makefile	2025-04-11 01:37:30.940296500 +0800
++++ b/drivers/dma-buf/heaps/Makefile	2025-04-11 19:25:03.221970784 +0800
+@@ -1,4 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
++obj-$(CONFIG_DMABUF_HEAPS_DEFERRED_FREE) += deferred-free-helper.o
++obj-$(CONFIG_DMABUF_HEAPS_PAGE_POOL)	+= page_pool.o
+ obj-$(CONFIG_DMABUF_HEAPS_SYSTEM)	+= system_heap.o
+ obj-$(CONFIG_DMABUF_HEAPS_CMA)		+= cma_heap.o
+ obj-$(CONFIG_DMABUF_HEAPS_SRAM)	+= sram_heap.o
 diff -Nur a/drivers/dma-buf/heaps/page_pool.c b/drivers/dma-buf/heaps/page_pool.c
 --- a/drivers/dma-buf/heaps/page_pool.c	1970-01-01 08:00:00.000000000 +0800
 +++ b/drivers/dma-buf/heaps/page_pool.c	2025-04-11 13:49:02.130220100 +0800
