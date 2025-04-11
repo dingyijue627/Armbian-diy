@@ -6,7 +6,7 @@
 		KERNELSOURCE='https://github.com/CNflysky/linux-rockchip.git'
 		KERNELBRANCH='branch:rk-6.1-rkr4.1'
 		KERNELPATCHDIR='rk35xx-CNflysky-6.1'
-		LINUXCONFIG='linux-rk35xx-CNflysky-6.1'
+		LINUXCONFIG='linux-rk35xx-vendor'
 		LINUXFAMILY=rk35xx
 		;;
 
