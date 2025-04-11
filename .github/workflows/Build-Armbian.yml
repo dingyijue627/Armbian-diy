@@ -150,7 +150,7 @@ jobs:
           cp -rf ./os/userpatches/* ./build/userpatches
 
           # Add CNflysky kernel
-          sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+          #sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
           # Add MAINTAINER
           sed -i '75i config/boards/lemonpi-pi1.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
           sed -i '75i config/boards/som3588-cat.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
