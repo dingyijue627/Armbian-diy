@@ -68,8 +68,8 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        BOARD: [som3588-cat, lemonpi-pi1]
-        RELEASE: [jammy, noble, oracular, plucky, bookworm, bullseye, trixie]
+        BOARD: [ lemonpi, som3588-cat]
+        RELEASE: [ noble, oracular, plucky, bookworm, trixie]
       
     steps:
       - name: "Checkout Armbian board"
@@ -144,8 +144,7 @@ jobs:
           # Add MAINTAINER
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
-          # Add redroid dma-buf scrcpy
-          mv ./build/patch/kernel/rk35xx-vendor-6.1/board-redroid-dma-buf ./build/patch/kernel/rk35xx-vendor-6.1/board-redroid-dma-buf.patch
+          # Add redroid 
           sed -i 's/CONFIG_ARM64_VA_BITS_48/CONFIG_ARM64_VA_BITS_39/g' ./build/lib/functions/compilation/armbian-kernel.sh
 
       - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]
@@ -189,7 +188,7 @@ jobs:
               </p>
               <br>
 
-              - Board: ${{ inputs.BOARD }} 
+              - Board: ${{ matrix.BOARD }} 
               - Kernel: ${{ inputs.BRANCH }} 
               - Redroid: Yes 
               - Verification: sha256sum 

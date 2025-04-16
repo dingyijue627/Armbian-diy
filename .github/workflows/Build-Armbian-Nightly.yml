@@ -6,6 +6,15 @@ on:
   workflow_dispatch:
     inputs:
     
+      BRANCH:
+        type: choice
+        description: 'Kernel branch'
+        options:
+        - edge
+        - vendor
+        - CNflysky
+        default: 'vendor'
+    
       DESKTOP:
         type: choice
         description: 'DESKTOP'
@@ -59,9 +68,8 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        BOARD: [som3588-cat, lemonpi-pi1]
-        BRANCH: [vendor, CNflysky]
-        RELEASE: [jammy, noble, trixie, bookworm, bullseye, oracular, plucky, sid]
+        BOARD: [ lemonpi, som3588-cat]
+        RELEASE: [jammy, noble, oracular, plucky, trixie, bookworm, bullseye,]
 
     steps:
       - name: "Checkout Armbian board"
@@ -92,13 +100,6 @@ jobs:
         run: |
           # update
           sudo apt-get update
-          #sudo apt-get install software-properties-common -y
-          # 清理 Docker 镜像和软件缓存
-          docker_images_ids=$(docker images -q)
-          if [ -n "$docker_images_ids" ]; then
-            docker rmi $docker_images_ids
-          fi
-          docker image prune -a -f
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge
           sudo -E apt-get -qq clean
@@ -143,6 +144,9 @@ jobs:
           # Add MAINTAINER
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
+          # Add redroid 
+          sed -i 's/CONFIG_ARM64_VA_BITS_48/CONFIG_ARM64_VA_BITS_39/g' ./build/lib/functions/compilation/armbian-kernel.sh
+
       - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]
         shell: bash
         run: |
@@ -152,7 +156,7 @@ jobs:
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ matrix.BOARD }}" \
-          BRANCH="${{ matrix.BRANCH }}" \
+          BRANCH="${{ inputs.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
@@ -186,7 +190,8 @@ jobs:
               <br>
 
               - Board: ${{ matrix.BOARD }} 
-              - Redroid: CNflysky
+              - Kernel: ${{ inputs.BRANCH }} 
+              - Redroid: Yes 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
