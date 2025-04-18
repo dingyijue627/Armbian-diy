@@ -16,7 +16,6 @@
 #include <dt-bindings/display/rockchip_vop.h>
 #include "rk3588.dtsi"
 #include "rk3588-linux.dtsi"
-#include "rk3588-lemonpi-csi.dtsi"
 
 / {
 	model = "LemonPi";
@@ -1253,17 +1252,11 @@
 	status = "okay";
 };
 
-// Mini-PCIe
-&pcie2x1l2 {
-	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
-	disable-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
-	status = "disabled";
-};
-
-// SATA
+// SATA-PCIe
 &sata0{
 	status = "okay";
 };
+
 /* USB3.1/DP Combo PHY1 */
 &usbdp_phy1 {
 	status = "okay";

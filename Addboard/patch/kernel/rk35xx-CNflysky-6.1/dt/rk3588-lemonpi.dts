@@ -16,11 +16,10 @@
 #include <dt-bindings/display/rockchip_vop.h>
 #include "rk3588.dtsi"
 #include "rk3588-linux.dtsi"
-#include "rk3588-lemonpi-csi.dtsi"
 
 / {
 	model = "LemonPi";
-	compatible = "lemonpi,rk3588-lemonpi-pi1", "rockchip,rk3588";
+	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
 
 	reserved-memory {
 		#address-cells = <2>;
