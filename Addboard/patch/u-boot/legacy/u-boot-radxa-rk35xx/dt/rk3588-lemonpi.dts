@@ -6,6 +6,7 @@
  */
 
 /dts-v1/;
+
 #include "rk3588.dtsi"
 #include "rk3588-u-boot.dtsi"
 #include <dt-bindings/input/input.h>
@@ -50,6 +51,16 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	vcc3v3_sys: vcc3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc12v_dcin>;
+	};
+	
 	led_sys: led-sys {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -78,16 +89,36 @@
 	};
 };
 
-&pcie3x4 {
-	u-boot,dm-pre-reloc;
-	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+&combphy0_ps {
+    status = "okay";
+};
 
+&combphy1_ps {
+    status = "okay";
 };
 
 &pcie30phy {
 	u-boot,dm-pre-reloc;
-	status = "okay";
+    status = "okay";
+};
+
+&pcie3x4 {
+	u-boot,dm-pre-reloc;
+    reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+    vpcie3v3-supply = <&vcc3v3_sys>;
+    status = "okay";
+};
+
+&pcie2x1l0 {
+	u-boot,dm-pre-reloc;
+    reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+    disable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+    status = "okay";
+};
+
+&sata0 {
+	u-boot,dm-pre-reloc;
+    status = "okay";
 };
 
 &sfc {
@@ -101,7 +132,6 @@
 };
 
 &pinctrl {
-
 	/delete-node/ fspi;
 	fspi {
 		u-boot,dm-spl;
