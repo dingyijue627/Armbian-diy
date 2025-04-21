@@ -1229,7 +1229,6 @@
 
 // PCIe30 Port0: M.2 M-Key
 &pcie3x4 {
-	num-lanes = <2>;
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_sys>;
 	status = "okay";
