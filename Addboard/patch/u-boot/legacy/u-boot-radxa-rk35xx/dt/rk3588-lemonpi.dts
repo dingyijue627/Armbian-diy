@@ -89,8 +89,18 @@
 	};
 };
 
-/* SATA30_HOST1/PCIe20x1_0 Combo PHY */
+&combphy0_ps {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+
 &combphy1_ps {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&combphy2_psu {
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
