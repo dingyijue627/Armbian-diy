@@ -144,9 +144,6 @@ jobs:
           # Add MAINTAINER
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
-          # Add redroid 
-          sed -i 's/CONFIG_ARM64_VA_BITS_48/CONFIG_ARM64_VA_BITS_39/g' ./build/lib/functions/compilation/armbian-kernel.sh
-
       - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]
         shell: bash
         run: |
