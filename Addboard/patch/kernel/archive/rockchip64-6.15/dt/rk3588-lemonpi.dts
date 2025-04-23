@@ -1276,33 +1276,31 @@
 	clock-names = "hdmi0_phy_pll", "hdmi1_phy_pll";
 };
 
+/* HDMI PHY0 */
 &hdptxphy0 {
 	status = "okay";
 };
 
+/* HDMI PHY1 */
 &hdptxphy1 {
 	status = "okay";
 };
 
+/* Video Output Processor */
+&vop {
+	status = "okay";
+};
+
+/* VOP Memory Management Unit */
+&vop_mmu {
+	status = "okay";
+};
+
+/* VOP2 HDMI1 endpoint */
 &vp1 {
 	vp1_out_hdmi1: endpoint@ROCKCHIP_VOP2_EP_HDMI1 {
 		reg = <ROCKCHIP_VOP2_EP_HDMI1>;
 		remote-endpoint = <&hdmi1_in_vp1>;
-	};
-};
-
-/* SPI NOR Flash controller */
-&sfc {
-	pinctrl-names = "default";
-	pinctrl-0 = <&fspim0_pins>;
-	status = "disabled";
-
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <104000000>;
-		spi-rx-bus-width = <4>;
-		spi-tx-bus-width = <1>;
 	};
 };
 
