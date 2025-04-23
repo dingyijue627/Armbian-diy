@@ -1,4 +1,4 @@
-name: "Build-Armbian-Nightly"
+name: "Armbian Build Nightly"
 on:
   schedule:
     - cron: '0 8 * * 5'
@@ -8,7 +8,7 @@ on:
     
       BRANCH:
         type: choice
-        description: 'Kernel branch'
+        description: "Kernel branch to use for build"
         options:
         - edge
         - vendor
@@ -17,7 +17,7 @@ on:
     
       DESKTOP:
         type: choice
-        description: 'DESKTOP'
+        description: "Desktop environment selection"
         options:
         - minimal
         - server
@@ -34,19 +34,19 @@ on:
 
       ENABLE_EXTENSIONS:
         type: choice
-        description: "Armbian lists of extensions"
+        description: "Armbian extension packages"
         options: [ 'mesa-vpu', ' ' ]
         default: " "
 
       DOCKER:
         type: choice
-        description: 'yes = DOCKER, no = Actions'
+        description: "Build type: yes = Docker, no = Actions"
         required: false
         options: [ 'yes', 'no' ]
         default: 'no'
       
       nightly:
-        description: 'yes = nighlty, no = stable'
+        description: "Build type: yes = nightly, no = stable"
         required: false
         options: [ 'yes', 'no' ]
         type: choice
@@ -54,7 +54,7 @@ on:
 
       ROOTFS:
         type: choice
-        description: 'ROOTFS TYPE'
+        description: "Root filesystem type"
         options:
         - ext4
         - btrfs
@@ -72,14 +72,14 @@ jobs:
         RELEASE: [jammy, noble, oracular, plucky, trixie, bookworm, bullseye,]
 
     steps:
-      - name: "Checkout Armbian board"
+      - name: "Checkout Board Source"
         uses: actions/checkout@main
         with:
           fetch-depth: 0
           clean: false
           path: custom
           
-      - name: "Checkout Armbian build"
+      - name: "Checkout Build System"
         uses: actions/checkout@main
         with:
           repository: armbian/build
@@ -87,7 +87,7 @@ jobs:
           ref: main
           path: build
           
-      - name: "Checkout Armbian os"
+      - name: "Checkout OS Source"
         uses: actions/checkout@main
         with:
           repository: armbian/os
@@ -95,7 +95,7 @@ jobs:
           clean: false
           path: os
     
-      - name: Set Env
+      - name: "Set Build Environment"
         shell: bash
         run: |
           # update
@@ -106,11 +106,13 @@ jobs:
           sudo -E  apt-get autoclean
           sudo -E apt-get clean
           sudo -E  apt-get autoremove
+
+          ## Remove residual config packages
           dpkg --list | grep "^rc"
           dpkg --list | grep "^rc" | cut -d " " -f 3
           dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs sudo dpkg --purge
           
-          # userspace decode
+          ## Set userspace decode options based on desktop selection
           if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
@@ -125,31 +127,31 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
           
-          # read version from upstream Armbian OS
+          ## Set build version and date from upstream Armbian OS
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
           
-          # read VERSION_OVERRIDE from upstream Armbian OS
+          ## Set version override if provided
           cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
           [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
          
-          # copy os userpatches
+          ## Copy user patches and board files into build directory
           mkdir -p  ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
 
-          # Add CNflysky kernel
+          ## Insert CNflysky kernel configuration into rockchip-rk3588 family config
           sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
           
-          # Add MAINTAINER
+          ## Add board maintainer to CODEOWNERS file
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
-      - name: Compile Armbian [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]
+      - name: "Compile Armbian Image  [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]"
         shell: bash
         run: |
-          # go to build folder
+          ## Enter build directory
           cd ./build
-          # execute build command
+          ## Run Armbian build script with selected options
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ matrix.BOARD }}" \
@@ -172,9 +174,10 @@ jobs:
           IMAGE_XZ_COMPRESSION_RATIO=8 \
           COMPRESS_OUTPUTIMAGE=sha,gpg,xz
 
-      - name: "Generate body file"
+      - name: "Generate GitHub Release Body"
         if: success()
         run: |
+            # Generate HTML body for GitHub Release
             echo "
               <p align='center'>
               <a href='https://www.armbian.com'>
@@ -188,7 +191,7 @@ jobs:
 
               - Board: ${{ matrix.BOARD }} 
               - Kernel: ${{ inputs.BRANCH }} 
-              - Redroid: Yes 
+              - Redroid: Vendor 
               - Verification: sha256sum 
 
               Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
@@ -197,7 +200,7 @@ jobs:
               &nbsp;
               </p>" > body.html
 
-      - name: Upload Armbian to Release 
+      - name: "Upload Armbian Image to GitHub Release"
         uses: ncipollo/release-action@main
         if: success()
         with:
