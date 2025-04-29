@@ -12,7 +12,6 @@ on:
         options:
         - edge
         - vendor
-        - CNflysky
         default: 'vendor'
     
       DESKTOP:
@@ -141,7 +140,7 @@ jobs:
           cp -rf ./os/userpatches/* ./build/userpatches
 
           ## Insert CNflysky kernel configuration into rockchip-rk3588 family config
-          sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+          ##sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
           
           ## Add board maintainer to CODEOWNERS file
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS

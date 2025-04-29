@@ -14,7 +14,7 @@
 +
 +/ {
 +	model = "LemonPi";
-+	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
++	compatible = "rockchip,rk3588-lemonpi", "rockchip,rk3588";
 +};
 +
 --- /dev/null

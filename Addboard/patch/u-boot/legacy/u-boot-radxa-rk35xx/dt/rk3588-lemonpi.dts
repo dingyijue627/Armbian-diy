@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2021 Rockchip Electronics Co., Ltd
  * Device Tree Source for LemonPi board on Rockchip RK3588 SoC.
+ *
  */
 
 /dts-v1/;
@@ -13,7 +14,7 @@
 / {
 	model = "LemonPi";
 	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
-
+    /* 12V DC input regulator */
 	vcc12v_dcin: vcc12v-dcin {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -23,7 +24,7 @@
 		regulator-min-microvolt = <12000000>;
 		regulator-max-microvolt = <12000000>;
 	};
-
+    /* 5V system power supply */
 	vcc5v0_sys: vcc5v0-sys {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -34,6 +35,7 @@
 		regulator-max-microvolt = <5000000>;
 		vin-supply = <&vcc12v_dcin>;
 	};
+    /* 5V power supply with GPIO control */
 
 	vcc_5v0: vcc-5v0 {
 		u-boot,dm-pre-reloc;
@@ -50,6 +52,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+    /* System LED power supply */
 	led_sys: led-sys {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -61,6 +64,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	/* ADC keys for user buttons */
 	adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
@@ -68,7 +72,7 @@
 		keyup-threshold-microvolt = <1800000>;
 		u-boot,dm-pre-reloc;
 		status = "okay";
-
+        /* Volume up button configuration */
 		volumeup-key {
 			u-boot,dm-pre-reloc;
 			linux,code = <KEY_VOLUMEUP>;
@@ -78,27 +82,58 @@
 	};
 };
 
+/* PCIe 3.0 PHY configuration */
+&pcie30phy {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+/* SATA30/PCIe20x1_2 Combo PHY */
+&combphy0_ps {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+/* SATA30_HOST1/PCIe20x1_0 Combo PHY */
+&combphy1_ps {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+/* Combo PHY 2 as USB3 PHY */
+&combphy2_psu {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+/* PCIe 3x4 configuration */
 &pcie3x4 {
 	u-boot,dm-pre-reloc;
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
-&pcie30phy {
+/* PCIe2x1l0 M.2 E-Key slot */
+&pcie2x1l0 {
 	u-boot,dm-pre-reloc;
+	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+	disable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
+/* SPI Flash Controller (SFC) configuration */
 &sfc {
 	status = "disabled";
 	pinctrl-names = "default";
 	pinctrl-0 = <&fspim0_pins>;
 };
 
+/* SPI NOR Flash configuration */
 &spi_nor {
 	status = "disabled";
 };
 
+/* Pin control configuration */
 &pinctrl {
 
 	/delete-node/ fspi;
@@ -122,6 +157,7 @@
 		};
 	};
 
+    /* Power control for 5V regulator */
 	power {
 		u-boot,dm-spl;
 		vcc_5v0_en: vcc-5v0-en {

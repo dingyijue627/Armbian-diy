@@ -18,7 +18,7 @@
 
 / {
 	model = "LemonPi";
-	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
+	compatible = "rockchip,rk3588-lemonpi", "rockchip,rk3588";
 
 	reserved-memory {
 		#address-cells = <2>;

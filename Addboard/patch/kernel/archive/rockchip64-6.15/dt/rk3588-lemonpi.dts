@@ -16,7 +16,7 @@
 
 / {
 	model = "LemonPi";
-	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
+	compatible = "rockchip,rk3588-lemonpi", "rockchip,rk3588";
 
 	/* Device aliases for system devices */
 	aliases {
@@ -1096,8 +1096,6 @@
 
 /* SATA-PCIe controller */
 &sata0{
-	phy-names = "sata-phy";
-	phys = <&combphy0_ps>;
 	status = "okay";
 };
 

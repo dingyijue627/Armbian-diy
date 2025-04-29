@@ -12,7 +12,6 @@ on:
         options:
         - edge
         - vendor
-        - CNflysky
         default: 'vendor'
         
       DESKTOP:
@@ -69,7 +68,7 @@ jobs:
     strategy:
       matrix:
         BOARD: [ lemonpi, som3588-cat]
-        RELEASE: [ noble, oracular, plucky, bookworm, trixie]
+        RELEASE: [ oracular, plucky, bookworm, trixie]
       
     steps:
       - name: "Checkout Board Source"
@@ -144,7 +143,7 @@ jobs:
           cp -rf ./build/patch/kernel/archive/rockchip64-6.14/overlay ./build/patch/kernel/archive/rockchip64-6.15
 
           ## Insert CNflysky kernel configuration into rockchip-rk3588 family config
-          sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+          ##sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
           
           ## Add board maintainer to CODEOWNERS file
           sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
