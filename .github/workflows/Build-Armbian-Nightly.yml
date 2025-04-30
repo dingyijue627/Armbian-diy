@@ -67,8 +67,8 @@ jobs:
     runs-on: ubuntu-22.04  
     strategy:
       matrix:
-        BOARD: [ lemonpi, som3588-cat]
-        RELEASE: [jammy, noble, oracular, plucky, trixie, bookworm, bullseye,]
+        BOARD: [lemonpi, som3588-cat]
+        RELEASE: [plucky, oracular, noble, trixie, bookworm]
 
     steps:
       - name: "Checkout Board Source"
