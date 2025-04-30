@@ -5,15 +5,6 @@ on:
     
   workflow_dispatch:
     inputs:
-    
-      BRANCH:
-        type: choice
-        description: "Kernel branch to use for build"
-        options:
-        - edge
-        - vendor
-        default: 'vendor'
-    
       DESKTOP:
         type: choice
         description: "Desktop environment selection"
@@ -68,6 +59,7 @@ jobs:
     strategy:
       matrix:
         BOARD: [lemonpi, som3588-cat]
+        BRANCH: [edge, vendor]
         RELEASE: [plucky, oracular, noble, trixie, bookworm]
 
     steps:
@@ -154,7 +146,7 @@ jobs:
           ./compile.sh \
           REVISION="${{ env.ARMBIAN_VERSION }}" \
           BOARD="${{ matrix.BOARD }}" \
-          BRANCH="${{ inputs.BRANCH }}" \
+          BRANCH="${{ matrix.BRANCH }}" \
           RELEASE="${{ matrix.RELEASE }}" \
           KERNEL_CONFIGURE="no" \
           BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
@@ -189,7 +181,7 @@ jobs:
               <br>
 
               - Board: ${{ matrix.BOARD }} 
-              - Kernel: ${{ inputs.BRANCH }} 
+              - Kernel: vendor edge 
               - Redroid: Vendor 
               - Verification: sha256sum 
 
