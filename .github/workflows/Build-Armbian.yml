@@ -11,6 +11,7 @@ on:
         description: "Kernel branch to use for build"
         options:
         - edge
+        - current
         - vendor
         default: 'vendor'
         
