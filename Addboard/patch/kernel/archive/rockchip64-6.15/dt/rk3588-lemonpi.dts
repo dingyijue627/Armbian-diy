@@ -38,9 +38,17 @@
 		io-channel-names = "buttons";
 		keyup-threshold-microvolt = <1800000>;
 		poll-interval = <100>;
+		status = "okay"; 
+		
 		power {
 			label = "power";
 			linux,code = <KEY_POWER>;
+			press-threshold-microvolt = <1750>;
+		};
+
+		volumeup-key {
+			linux,code = <KEY_VOLUMEUP>;
+			label = "volume up";
 			press-threshold-microvolt = <1750>;
 		};
 	};
@@ -49,6 +57,7 @@
 	leds: leds {
 		status = "okay";
 		compatible = "gpio-leds";
+
 		sys_led: sys-led {
 			label = "sys_led";
 			linux,default-trigger = "heartbeat";
@@ -100,6 +109,10 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		vin-supply = <&vcc5v0_sys>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PA3 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc_5v0_en>;
 	};
 
     /* 5V USB power supply */
@@ -170,7 +183,19 @@
 		regulator-boot-on;
 		vin-supply = <&vcc5v0_usb>;
 	};
-	
+
+	/* HDMI0 connector */
+	hdmi0-con {
+		compatible = "hdmi-connector";
+		type = "a";
+
+		port {
+			hdmi0_con_in: endpoint {
+				remote-endpoint = <&hdmi0_out_con>;
+			};
+		};
+	};
+
     /* HDMI1 connector */
 	hdmi1-con {
 		compatible = "hdmi-connector";
@@ -243,46 +268,14 @@
 	};
 };
 
-/* Fan thermal zone and cooling maps */
-&package_thermal {
-	polling-delay = <1000>;
-
-	cooling-maps {
-		map0 {
-			trip = <&package_fan0>;
-			cooling-device = <&fan THERMAL_NO_LIMIT 1>;
-		};
-
-		map1 {
-			trip = <&package_fan1>;
-			cooling-device = <&fan 2 THERMAL_NO_LIMIT>;
-		};
-
-		map3 {
-			trip = <&package_fan2>;
-			cooling-device = <&fan 3 THERMAL_NO_LIMIT>;
-		};
-	};
-
-	trips {
-		package_fan0: package-fan0 {
-			temperature = <50000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-
-		package_fan1: package-fan1 {
-			temperature = <60000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-
-		package_fan2: package-fan2 {
-			temperature = <65000>;
-			hysteresis = <5000>;
-			type = "active";
-		};
-	};
+/* I2S0 8-channel audio interface */
+&i2s0_8ch {
+	status = "okay";
+	rockchip,clk-trcm = <1>;
+	pinctrl-0 = <&i2s0_lrck
+			 &i2s0_sclk
+			 &i2s0_sdi0
+			 &i2s0_sdo0>;
 };
 
 /* I2S5 8-channel audio interface */
@@ -885,16 +878,6 @@
 	};
 };
 
-/* I2S0 8-channel audio interface */
-&i2s0_8ch {
-	status = "okay";
-	rockchip,clk-trcm = <1>;
-	pinctrl-0 = <&i2s0_lrck
-			 &i2s0_sclk
-			 &i2s0_sdi0
-			 &i2s0_sdo0>;
-};
-
 /* SARADC analog-to-digital converter */
 &saradc {
 	status = "okay";
@@ -931,6 +914,48 @@
 	vmmc-supply = <&vcc_3v3_s3>;
 	vqmmc-supply = <&vccio_sd_s0>;
 	status = "okay";
+};
+
+/* Fan thermal zone and cooling maps */
+&package_thermal {
+	polling-delay = <1000>;
+
+	cooling-maps {
+		map0 {
+			trip = <&package_fan0>;
+			cooling-device = <&fan THERMAL_NO_LIMIT 1>;
+		};
+
+		map1 {
+			trip = <&package_fan1>;
+			cooling-device = <&fan 2 THERMAL_NO_LIMIT>;
+		};
+
+		map3 {
+			trip = <&package_fan2>;
+			cooling-device = <&fan 3 THERMAL_NO_LIMIT>;
+		};
+	};
+
+	trips {
+		package_fan0: package-fan0 {
+			temperature = <50000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+
+		package_fan1: package-fan1 {
+			temperature = <60000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+
+		package_fan2: package-fan2 {
+			temperature = <65000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
 };
 
 /* PWM2 controller */
@@ -1228,6 +1253,30 @@
 	status = "okay";
 };
 
+/* HDMI0 controller */
+&hdmi0 {
+	status = "okay";
+};
+
+/* HDMI1 input endpoint */
+&hdmi0_in {
+	hdmi0_in_vp0: endpoint {
+		remote-endpoint = <&vp0_out_hdmi0>;
+	};
+};
+
+/* HDMI0 output endpoint */
+&hdmi0_out {
+	hdmi0_out_con: endpoint {
+		remote-endpoint = <&hdmi0_con_in>;
+	};
+};
+
+/* HDMI0 audio */
+&hdmi0_sound {
+	status = "okay";
+};
+
 /* HDMI1 controller */
 &hdmi1 {
 	pinctrl-0 = <&hdmim0_tx1_cec &hdmim0_tx1_hpd
@@ -1294,6 +1343,14 @@
 	status = "okay";
 };
 
+/* VOP2 HDMI0 endpoint */
+&vp0 {
+	vp0_out_hdmi0: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
+		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
+		remote-endpoint = <&hdmi0_in_vp0>;
+	};
+};
+
 /* VOP2 HDMI1 endpoint */
 &vp1 {
 	vp1_out_hdmi1: endpoint@ROCKCHIP_VOP2_EP_HDMI1 {
@@ -1335,6 +1392,12 @@
 	leds {
 		sys_led_pin: sys-led-pin {
 			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	power {
+		vcc_5v0_en: vcc-5v0-en {
+			rockchip,pins = <4 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
