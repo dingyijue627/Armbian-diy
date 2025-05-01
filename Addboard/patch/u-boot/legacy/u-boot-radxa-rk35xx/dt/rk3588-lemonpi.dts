@@ -15,7 +15,7 @@
 	model = "LemonPi";
 	compatible = "lemonpi,rk3588-lemonpi", "rockchip,rk3588";
 
-    /* 12V DC input regulator */
+	/* 12V DC input regulator */
 	vcc12v_dcin: vcc12v-dcin {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -26,7 +26,7 @@
 		regulator-max-microvolt = <12000000>;
 	};
 
-    /* 5V system power supply */
+	/* 5V system power supply */
 	vcc5v0_sys: vcc5v0-sys {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -38,7 +38,7 @@
 		vin-supply = <&vcc12v_dcin>;
 	};
 
-    /* 5V power supply with GPIO control */
+	/* 5V power supply with GPIO control */
 	vcc_5v0: vcc-5v0 {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -54,7 +54,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-    /* System LED power supply */
+	/* System LED power supply */
 	led_sys: led-sys {
 		u-boot,dm-pre-reloc;
 		compatible = "regulator-fixed";
@@ -75,7 +75,7 @@
 		u-boot,dm-pre-reloc;
 		status = "okay";
 		
-        /* Volume up button configuration */
+        	/* Volume up button configuration */
 		volumeup-key {
 			u-boot,dm-pre-reloc;
 			linux,code = <KEY_VOLUMEUP>;
@@ -124,9 +124,37 @@
 	status = "okay";
 };
 
+/* SPI Flash Controller (SFC) configuration */
+&sfc {
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&fspim0_pins>;
+};
+
+/* SPI NOR Flash configuration */
+&spi_nor {
+	status = "disabled";
+};
+
 /* Pin control configuration */
 &pinctrl {
-    /* Power control for 5V regulator */
+
+	/delete-node/ fspi;
+	fspi {
+		u-boot,dm-spl;
+		fspim0_pins: fspim0-pins {
+			u-boot,dm-spl;
+			rockchip,pins =
+				<2 RK_PA0 2 &pcfg_pull_none>,
+				<2 RK_PD6 2 &pcfg_pull_none>,
+				<2 RK_PD0 2 &pcfg_pull_none>,
+				<2 RK_PD1 2 &pcfg_pull_none>,
+				<2 RK_PD2 2 &pcfg_pull_none>,
+				<2 RK_PD3 2 &pcfg_pull_none>;
+		};
+	};
+
+	/* Power control for 5V regulator */
 	power {
 		u-boot,dm-spl;
 		vcc_5v0_en: vcc-5v0-en {
