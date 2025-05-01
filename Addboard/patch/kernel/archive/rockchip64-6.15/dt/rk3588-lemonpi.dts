@@ -935,7 +935,7 @@
 		};
 
 		map4 {
-			trip = <&package_fan4>;
+			trip = <&package_fan3>;
 			cooling-device = <&fan 4 THERMAL_NO_LIMIT>;
 		};
 	};
