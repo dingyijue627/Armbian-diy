@@ -227,14 +227,14 @@
 		regulator-always-on;
 	};
 
-    /* BEGIN: ST7789 Backlight Node */
-    st7789: st7789 { 
-        compatible = "pwm-backlight";
-        pwms = <&pwm13 0 5000000 0>; 
-        brightness-levels = <0 4 8 16 32 64 128 255>;
-        default-brightness-level = <6>;
-        power-supply = <&vcc3v3_sys>;
-        status = "okay";
+	/* BEGIN: ST7789 Backlight Node */
+	st7789: st7789 { 
+		compatible = "pwm-backlight";
+		pwms = <&pwm13 0 5000000 0>; 
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <6>;
+		power-supply = <&vcc3v3_sys>;
+		status = "okay";
 	};
 
 	/* Audio codec and analog audio card (ES8388) */
@@ -283,9 +283,9 @@
 	status = "okay";
 	rockchip,clk-trcm = <1>;
 	pinctrl-0 = <&i2s0_lrck
-			 &i2s0_sclk
-			 &i2s0_sdi0
-			 &i2s0_sdo0>;
+		 &i2s0_sclk
+		 &i2s0_sdi0
+		 &i2s0_sdo0>;
 };
 
 /* I2S5 8-channel audio interface */
