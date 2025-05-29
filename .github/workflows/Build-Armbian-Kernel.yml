@@ -1,0 +1,307 @@
+name: "Armbian Build Kernel"
+on:
+  workflow_dispatch:
+    inputs:
+    
+      BRANCH:
+        type: choice
+        description: "Kernel branch to use for build" # Kernel branch to use
+        options:
+        - edge
+        - current
+        - vendor
+        default: 'vendor'
+        
+      DESKTOP:
+        type: choice
+        description: "Desktop environment selection" # Desktop environment
+        options:
+        - minimal
+        - server
+        - gnome
+        - budgie
+        - cinnamon
+        - i3-wm
+        - kde-neon
+        - kde-plasma
+        - mate
+        - xfce
+        - xmonad
+        default: 'server'
+
+      ENABLE_EXTENSIONS:
+        type: choice
+        description: "Armbian extension packages" # Armbian extension packages
+        options: [ 'mesa-vpu', ' ' ]
+        default: " "
+
+      DOCKER:
+        type: choice
+        description: "Build type: yes = Docker, no = Actions" # Build using Docker or native Actions runner
+        required: false
+        options: [ 'yes', 'no' ]
+        default: 'no'
+      
+      nightly:
+        description: "Build type: yes = nightly, no = stable" # Nightly or stable build type
+        required: false
+        options: [ 'yes', 'no' ]
+        type: choice
+        default: 'no'
+
+      ROOTFS:
+        type: choice
+        description: "Root filesystem type" # Root filesystem
+        options:
+        - ext4
+        - btrfs
+        default: 'ext4'
+
+env:
+  TZ: Asia/Shanghai # Set timezone
+
+jobs:
+  build_kernel: # Job 1: Build Kernel Packages
+    name: "Build Kernel [ ${{ matrix.BOARD }} | ${{ inputs.BRANCH }} ]"
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false # Continue other matrix jobs even if one fails
+      matrix:
+        BOARD: [ lemonpi, som3588-cat ] # Boards to build kernel for
+
+    outputs: 
+      kernel_artifact_name: kernel-debs-${{ matrix.BOARD }}-${{ inputs.BRANCH }}
+      
+    steps:
+      - name: "Checkout Board Source"
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          clean: false
+          path: custom
+
+      - name: "Checkout Build System"
+        uses: actions/checkout@main
+        with:
+          repository: armbian/build
+          clean: false
+          ref: main
+          path: build
+
+      - name: "Checkout OS Source" 
+        uses: actions/checkout@main
+        with:
+          repository: armbian/os
+          fetch-depth: 0
+          clean: false
+          path: os
+
+      - name: "Set Build Environment (Kernel)"
+        shell: bash
+        run: |
+          # Update and clean the runner environment
+          sudo apt-get update
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
+
+          # Prepare user patches and board files
+          mkdir -p ./build/userpatches
+          cp -rf ./custom/Addboard/* ./build
+          cp -rf ./os/userpatches/* ./build/userpatches
+
+      - name: "Compile Kernel Packages [ ${{ matrix.BOARD }} | ${{ inputs.BRANCH }} ]"
+        shell: bash
+        run: |
+          cd ./build
+          # Compile kernel packages only.
+          # KERNEL_ONLY="yes" or similar flags tell the script to build only kernel related .deb packages.
+          # RELEASE is specified for toolchain consistency.
+          # Ensure these flags are correct for your Armbian build system version.
+          ./compile.sh \
+            BOARD="${{ matrix.BOARD }}" \
+            BRANCH="${{ inputs.BRANCH }}" \
+            RELEASE="bookworm" \
+            KERNEL_ONLY="yes" \
+            KERNEL_CONFIGURE="yes" \
+            BUILD_DESKTOP="no" \
+            BUILD_MINIMAL="yes" \
+            EXPERT="yes" \
+            CREATE_TARBALL="no" \
+            IGNORE_UPDATES="yes" \
+            IGNORE_COMPRESS_WARN="yes" \
+            VENDOR=Armbian
+
+          echo "Listing kernel packages in output/debs:"
+          ls -l output/debs/
+
+      - name: "Upload Kernel Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-debs-${{ matrix.BOARD }}-${{ inputs.BRANCH }} # Artifact name includes board and branch
+          path: |
+            build/output/debs/*.deb
+          if-no-files-found: error # Fail if no .deb files are found
+
+  Armbian: # Job 2: Build Armbian Image using Prebuilt Kernel
+    needs: build_kernel # This job depends on the successful completion of build_kernel
+    name: "Build Image [ ${{ matrix.BOARD }} | ${{ matrix.RELEASE }} ]"
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false # Continue other matrix jobs even if one fails
+      matrix:
+        BOARD: [ lemonpi, som3588-cat ] # Boards to build image for
+        RELEASE: [ oracular, plucky, bookworm, trixie ] # OS releases to build
+    steps:
+      - name: "Checkout Board Source"
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          clean: false
+          path: custom
+
+      - name: "Checkout Build System"
+        uses: actions/checkout@main
+        with:
+          repository: armbian/build
+          clean: false
+          ref: main
+          path: build
+
+      - name: "Checkout OS Source"
+        uses: actions/checkout@main
+        with:
+          repository: armbian/os
+          fetch-depth: 0
+          clean: false
+          path: os
+
+      - name: "Download Kernel Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-debs-${{ matrix.BOARD }}-${{ inputs.BRANCH }} # Download artifact matching current board and input branch
+          path: ./prebuilt-kernel-debs # Destination path for downloaded debs
+
+      - name: "Set Build Environment (Image)"
+        shell: bash
+        run: |
+          # Update and clean the runner environment
+          sudo apt-get update
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
+
+          # Set desktop related build flags
+          if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
+            echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
+            echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
+          elif [[ "${{ inputs.DESKTOP }}" == "server" ]]; then
+            echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
+            echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
+          else
+            echo "BUILD_DESKTOP="yes"" >> $GITHUB_ENV
+            echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
+            echo "DESKTOP_ENVIRONMENT="${{ inputs.DESKTOP }}"" >> $GITHUB_ENV
+            echo "DESKTOP_APPGROUPS_SELECTED="browsers"" >> $GITHUB_ENV # Example app group
+            echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
+          fi
+
+          # Set versioning environment variables
+          echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
+          [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
+
+          # Prepare user patches and board files
+          mkdir -p ./build/userpatches
+          cp -rf ./custom/Addboard/* ./build
+          cp -rf ./os/userpatches/* ./build/userpatches
+
+          # Copy prebuilt kernel debs to the location Armbian build system expects
+          echo "Preparing prebuilt kernel debs..."
+          mkdir -p ./build/output/debs
+          if ls ./prebuilt-kernel-debs/*.deb 1> /dev/null 2>&1; then
+            echo "Copying kernel debs to build/output/debs/"
+            cp -v ./prebuilt-kernel-debs/*.deb ./build/output/debs/
+          else
+            echo "WARNING: No prebuilt kernel debs found in ./prebuilt-kernel-debs/."
+            # Depending on the build script, this might cause a failure later or it might try to build the kernel.
+          fi
+          
+          # Add board maintainer to CODEOWNERS (optional, if needed for this structure)
+          # sed -i '75i config/boards/${{ matrix.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
+
+      - name: "Compile Armbian Image [ ${{ matrix.BOARD }} | ${{ matrix.RELEASE }} ] with Prebuilt Kernel"
+        shell: bash
+        run: |
+          cd ./build
+          echo "Checking for debs in ./output/debs/ before image compilation:"
+          ls -l ./output/debs/
+
+          # Compile the full Armbian image using the prebuilt kernel.
+          # KERNEL_CONFIGURE="no" is crucial to prevent rebuilding the kernel.
+          # The script should pick up .deb packages from output/debs.
+          ./compile.sh \
+            BOARD="${{ matrix.BOARD }}" \
+            BRANCH="${{ inputs.BRANCH }}" \
+            RELEASE="${{ matrix.RELEASE }}" \
+            KERNEL_CONFIGURE="no" \
+            BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
+            BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
+            DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
+            DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
+            DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
+            ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS || ' '  }}" \
+            BOARD_FIRMWARE_INSTALL="-full" \
+            SHARE_LOG="yes" \
+            BETA="${{ inputs.nightly }}" \
+            PREFER_DOCKER="${{ inputs.DOCKER }}" \
+            ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
+            EXPERT="yes" \
+            VENDOR=Armbian \
+            IMAGE_XZ_COMPRESSION_RATIO=8 \
+            COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+
+      - name: "Generate GitHub Release Body"
+        if: success()
+        run: |
+            # Generate HTML body for GitHub Release.
+            # This will be overwritten by each matrix job if they all use the same release tag.
+            echo "
+              <p align='center'>
+              <a href='https://www.armbian.com'>
+              <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
+              <h1 align=center>Armbian OS</h1>
+              <p align=center'>
+              <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+              <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+              </p>
+              <br>
+
+              - Board: ${{ matrix.BOARD }}
+              - Kernel Branch (used for prebuilt kernel): ${{ inputs.BRANCH }}
+              - OS Release: ${{ matrix.RELEASE }}
+              - Desktop: ${{ inputs.DESKTOP }}
+              - Verification: sha256sum
+
+              Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well.
+
+              <br>
+               
+              </p>" > body.html
+
+      - name: "Upload Armbian Image to GitHub Release"
+        uses: ncipollo/release-action@main
+        if: success()
+        with:
+          # The Git tag to create for this release.
+          # All matrix builds will upload to this same tag if VERSIONOS is the same.
+          tag: "Armbian_V${{ env.VERSIONOS }}"
+          # The name of the GitHub Release.
+          name: "Armbian_V${{ env.VERSIONOS }}"
+          artifacts: "build/output/images/*"      # Path to the image artifacts to upload
+          allowUpdates: true                      # Allow updating an existing release with the same tag
+          removeArtifacts: false                  # Do not remove artifacts from a previous release if updating
+          replacesArtifacts: true                 # Replace artifacts if they have the same name
+          token: ${{ secrets.GITHUB_TOKEN }}      # GitHub token for authentication
+          bodyFile: "body.html"                   # File containing the release description (will be the one from the last matrix job)
