@@ -122,9 +122,10 @@ jobs:
           ./compile.sh \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ inputs.BRANCH }}" \
+            PREFER_DOCKER="${{ inputs.DOCKER }}" \
             RELEASE="bookworm" \
             KERNEL_ONLY="yes" \
-            KERNEL_CONFIGURE="no" \
+            KERNEL_CONFIGURE="yes" \
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
             EXPERT="yes" \
