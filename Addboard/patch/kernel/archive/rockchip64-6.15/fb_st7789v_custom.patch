@@ -1,0 +1,30 @@
++++ a/drivers/staging/fbtft/fb_st7789v.c	2025-05-23 00:58:06.351414766 +0800
++++ b/drivers/staging/fbtft/fb_st7789v.c	2025-05-23 00:50:12.151416075 +0800
+@@ -366,6 +366,20 @@ static int blank(struct fbtft_par *par,
+ 	return 0;
+ }
+ 
++static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
++{
++        //硬件的偏移，参考卖屏幕的给的代码
++        ys = ys + 34;
++        ye = ye + 34;
++        write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS,
++                  (xs >> 8) & 0xFF, xs & 0xFF, (xe >> 8) & 0xFF, xe & 0xFF);
++
++        write_reg(par, MIPI_DCS_SET_PAGE_ADDRESS,
++                  (ys >> 8) & 0xFF, ys & 0xFF, (ye >> 8) & 0xFF, ye & 0xFF);
++
++        write_reg(par, MIPI_DCS_WRITE_MEMORY_START);
++}
++
+ static struct fbtft_display display = {
+ 	.regwidth = 8,
+ 	.width = 240,
+@@ -379,6 +393,7 @@ static struct fbtft_display display = {
+ 		.set_var = set_var,
+ 		.set_gamma = set_gamma,
+ 		.blank = blank,
++		.set_addr_win = set_addr_win,
+ 	},
+ };

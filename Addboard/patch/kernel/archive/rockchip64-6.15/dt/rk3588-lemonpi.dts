@@ -230,7 +230,7 @@
 	/* BEGIN: ST7789 Backlight Node */
 	st7789: st7789 { 
 		compatible = "pwm-backlight";
-		pwms = <&pwm13 0 5000000 0>; 
+		pwms = <&pwm13 0 100000 0>; 
 		brightness-levels = <0 4 8 16 32 64 128 255>;
 		default-brightness-level = <6>;
 		power-supply = <&vcc3v3_sys>;
@@ -567,28 +567,30 @@
 
 /* SPI0 bus for pwm13 */
 &spi0 {
-    pinctrl-names = "default";
-    pinctrl-0 = <&spi0_m1_custom_pins>, <&spi0m1_cs0>;
-    status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_m1_custom_pins>, <&spi0m1_cs0>;
+	status = "okay";
 
-    st7789_panel: panel@0 {
-        compatible = "sitronix,st7789v";
-        reg = <0>;
-        spi-max-frequency = <48000000>;
+	st7789_panel: panel@0 {
+		compatible = "sitronix,st7789v";
+		reg = <0>;
+        spi-max-frequency = <96000000>;
+		spi-cpol;
+        spi-cpha;
+		pinctrl-names = "default";
+		pinctrl-0 = <&st7789_dc_pin>, <&st7789_reset_pin>;
 
-        pinctrl-names = "default";
-        pinctrl-0 = <&st7789_dc_pin>, <&st7789_reset_pin>;
+		reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
 
-        reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_LOW>;
-        dc-gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
+		backlight = <&st7789>;
 
-        backlight = <&st7789>;
-
-        width = <172>;
-        height = <320>;
-        fps = <30>;
-        buswidth = <8>;
-        status = "okay";
+		width = <172>;
+		height = <320>;
+		rotate = <90>;
+		fps = <30>;
+		buswidth = <8>;
+		status = "okay";
 	};
 };
 
@@ -1455,8 +1457,8 @@
 	spi0_pins {
 		spi0_m1_custom_pins: spi0-m1-custom-pins {
 			rockchip,pins =
-				<4 RK_PA2 8 &pcfg_pull_up_drv_level_1>,
-				<4 RK_PA1 8 &pcfg_pull_up_drv_level_1>;
+				<4 RK_PA2 8 &pcfg_pull_up_drv_level_1>, /* SPI0_CLK_M1 (SCLK) -> GPIO4_A2 */
+				<4 RK_PA1 8 &pcfg_pull_up_drv_level_1>; /* SPI0_MOSI_M1 (MOSI) -> GPIO4_A1 */
 		};
 	};
 	
@@ -1469,7 +1471,7 @@
 			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-
+	
 	hdmirx {
 		hdmirx_hpd: hdmirx-hpd {
 			rockchip,pins = <1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;
