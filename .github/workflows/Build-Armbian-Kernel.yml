@@ -61,7 +61,7 @@ env:
   TZ: Asia/Shanghai # Set timezone
 
 jobs:
-  build_kernel: # Job 1: Build Kernel Packages
+  Build_Kernel: # Job 1: Build Kernel Packages
     name: "Build Kernel [ ${{ matrix.BOARD }} ${{ inputs.BRANCH }} ]"
     runs-on: ubuntu-22.04
     strategy:
@@ -124,7 +124,6 @@ jobs:
             BRANCH="${{ inputs.BRANCH }}" \
             PREFER_DOCKER="${{ inputs.DOCKER }}" \
             RELEASE="bookworm" \
-            KERNEL_ONLY="yes" \
             KERNEL_CONFIGURE="yes" \
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
@@ -132,7 +131,8 @@ jobs:
             CREATE_TARBALL="no" \
             IGNORE_UPDATES="yes" \
             IGNORE_COMPRESS_WARN="yes" \
-            VENDOR=Armbian
+            VENDOR=Armbian \
+            kernel 
 
           echo "Listing kernel packages in output/debs:"
           ls -l output/debs/
