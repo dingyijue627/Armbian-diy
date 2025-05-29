@@ -62,7 +62,7 @@ env:
 
 jobs:
   build_kernel: # Job 1: Build Kernel Packages
-    name: "Build Kernel [ ${{ matrix.BOARD }} | ${{ inputs.BRANCH }} ]"
+    name: "Build Kernel [ ${{ matrix.BOARD }} ${{ inputs.BRANCH }} ]"
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false # Continue other matrix jobs even if one fails
@@ -111,7 +111,7 @@ jobs:
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
 
-      - name: "Compile Kernel Packages [ ${{ matrix.BOARD }} | ${{ inputs.BRANCH }} ]"
+      - name: "Compile Kernel Packages [ ${{ matrix.BOARD }} ${{ inputs.BRANCH }} ]"
         shell: bash
         run: |
           cd ./build
@@ -124,7 +124,7 @@ jobs:
             BRANCH="${{ inputs.BRANCH }}" \
             RELEASE="bookworm" \
             KERNEL_ONLY="yes" \
-            KERNEL_CONFIGURE="yes" \
+            KERNEL_CONFIGURE="no" \
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
             EXPERT="yes" \
@@ -146,7 +146,7 @@ jobs:
 
   Armbian: # Job 2: Build Armbian Image using Prebuilt Kernel
     needs: build_kernel # This job depends on the successful completion of build_kernel
-    name: "Build Image [ ${{ matrix.BOARD }} | ${{ matrix.RELEASE }} ]"
+    name: "Build Image [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]"
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false # Continue other matrix jobs even if one fails
@@ -231,7 +231,7 @@ jobs:
           # Add board maintainer to CODEOWNERS (optional, if needed for this structure)
           # sed -i '75i config/boards/${{ matrix.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
 
-      - name: "Compile Armbian Image [ ${{ matrix.BOARD }} | ${{ matrix.RELEASE }} ] with Prebuilt Kernel"
+      - name: "Compile Armbian Image [ ${{ matrix.BOARD }}  ${{ matrix.RELEASE }} ] with Prebuilt Kernel"
         shell: bash
         run: |
           cd ./build
