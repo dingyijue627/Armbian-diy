@@ -133,7 +133,7 @@ jobs:
             BRANCH="${{ inputs.BRANCH }}" \
 
             RELEASE="bookworm" \
-            KERNEL_CONFIGURE="yes" \
+            KERNEL_CONFIGURE="no" \
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
             BOARD_FIRMWARE_INSTALL="-full" \
