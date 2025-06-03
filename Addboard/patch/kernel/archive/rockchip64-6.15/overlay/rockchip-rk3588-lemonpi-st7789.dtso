@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "rockchip,rk3588-lemonpi";
+
+    fragment@0 {
+        target = <&spi0>;
+        __overlay__ {
+            status = "okay";
+            pinctrl-names = "default";
+            pinctrl-0 = <&spi0m1_clk_pins>, <&spi0m1_mosi_pins>, <&spi0m1_cs0_pins>;
+
+            st7789_panel: panel@0 {
+                compatible = "sitronix,st7789v";
+                reg = <0>;
+                spi-max-frequency = <48000000>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&st7789_dc_pins>, <&st7789_reset_pins>;
+                reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_LOW>;
+                dc-gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
+                backlight = <&st7789_backlight>;
+                width = <172>;
+                height = <320>;
+                rotate = <90>;
+                fps = <30>;
+                buswidth = <8>;
+                status = "okay";
+            };
+        };
+    };
+
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+            st7789_backlight: st7789-backlight {
+                compatible = "pwm-backlight";
+                pwms = <&pwm13 0 100000 0>;
+                brightness-levels = <0 4 8 16 32 64 128 255>;
+                default-brightness-level = <6>;
+                power-supply = <&vcc3v3_sys>;
+                status = "okay";
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&pwm13>;
+        __overlay__ {
+            pinctrl-names = "default";
+            pinctrl-0 = <&pwm13_m1_pins>;
+            status = "okay";
+        };
+    };
+
+    fragment@3 {
+        target = <&pinctrl>;
+        __overlay__ {
+            /* SPI0 M1 Pins */
+            spi0-m1-pins  {
+                spi0m1_clk_pins: spi0m1-clk-pins {
+                    rockchip,pins = <4 RK_PA2 8 &pcfg_pull_up_drv_level_1>;
+                };
+                spi0m1_mosi_pins: spi0m1-mosi-pins {
+                    rockchip,pins = <4 RK_PA1 8 &pcfg_pull_up_drv_level_1>;
+                };
+                spi0m1_cs0_pins: spi0m1-cs0-pin {
+                    rockchip,pins = <4 RK_PB2 8 &pcfg_pull_up_drv_level_1>;
+                };
+            };
+
+            /* ST7789 GPIO Pins */
+            st7789-pins {
+                st7789_dc_pins: st7789-dc-pins {
+                    rockchip,pins = <4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
+                };
+                st7789_reset_pins: st7789-reset-pins {
+                    rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+                };
+            };
+
+            /* PWM13 M1 Pin */
+            pwm13-m1 {
+                pwm13_m1_pins: pwm13-m1-pins {
+                    rockchip,pins = <4 RK_PB6 11 &pcfg_pull_none>;
+                };
+            };
+        };
+    };
+};

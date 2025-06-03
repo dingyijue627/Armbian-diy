@@ -6,7 +6,7 @@
  
 +static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
 +{
-+        //硬件的偏移，参考卖屏幕的给的代码
++        
 +        ys = ys + 34;
 +        ye = ye + 34;
 +        write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS,
