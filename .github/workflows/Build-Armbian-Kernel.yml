@@ -135,11 +135,9 @@ jobs:
             KERNEL_CONFIGURE="no" \
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
-            BOARD_FIRMWARE_INSTALL="-full" \
             SHARE_LOG="yes" \
             BETA="${{ inputs.nightly }}" \
             PREFER_DOCKER="${{ inputs.DOCKER }}" \
-            ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
             EXPERT="yes" \
             CREATE_TARBALL="no" \
             IGNORE_UPDATES="yes" \
