@@ -289,6 +289,7 @@
 &i2s0_8ch {
 	status = "okay";
 	rockchip,clk-trcm = <1>;
+	pinctrl-names = "default"; 
 	pinctrl-0 = <&i2s0_lrck
 		     &i2s0_mclk
 		     &i2s0_sclk
@@ -564,8 +565,9 @@
 		clock-names = "mclk";
 		assigned-clocks = <&cru I2S0_8CH_MCLKOUT>;
 		assigned-clock-rates = <12288000>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&i2s0_mclk>;
+		/* 从 ES8388 节点中移除 MCLK 的 pinctrl 声明 */
+		// pinctrl-names = "default";
+		// pinctrl-0 = <&i2s0_mclk>;
 		DVDD-supply = <&vcc_1v8_s0>;
 		AVDD-supply = <&avcc_1v8_s0>;
 		PVDD-supply = <&vcc_3v3_s0>;
