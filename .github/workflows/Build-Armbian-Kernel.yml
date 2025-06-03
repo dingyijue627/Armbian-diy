@@ -145,6 +145,14 @@ jobs:
           echo "Listing original kernel packages in output/debs:"
           ls -l output/debs/
 
+      - name: "Upload Kernel Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-debs-${{ matrix.BOARD }}-${{ inputs.BRANCH }} # Artifact name includes board and branch
+          path: |
+            build/output/debs/*.deb
+          if-no-files-found: error # Fail if no .deb files are found
+
       - name: "Rename Kernel Packages"
         shell: bash
         run: |
@@ -168,13 +176,41 @@ jobs:
           ls -l
           cd ../../.. 
 
-      - name: "Upload Kernel Artifact"
-        uses: actions/upload-artifact@v4
+      - name: "Generate GitHub Release Body"
+        if: success()
+        run: |
+            # Generate HTML body for GitHub Release.
+            # This will be overwritten by each matrix job if they all use the same release tag.
+            echo "
+              <p align='center'>
+              <a href='https://www.armbian.com'>
+              <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
+              <h1 align=center>Armbian OS</h1>
+              <p align=center'>
+              <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+              <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+              </p>
+              <br>
+
+              - Kernel: ${{ inputs.BRANCH }}
+              - Verification: sha256sum
+
+              <br>
+               
+              </p>" > body.html
+
+      - name: "Upload Armbian Kernel to GitHub Release"
+        uses: ncipollo/release-action@main
+        if: success()
         with:
-          name: kernel-debs-${{ matrix.BOARD }}-${{ inputs.BRANCH }} # Artifact name includes board and branch
-          path: |
-            build/output/debs/*.deb
-          if-no-files-found: error # Fail if no .deb files are found
+          tag: "Armbian_V${{ env.VERSIONOS }}"
+          name: "Armbian_V${{ env.VERSIONOS }}"
+          artifacts: "build/output/debs/linux-*.deb"
+          allowUpdates: true                      # Allow updating an existing release with the same tag
+          removeArtifacts: false                  # Do not remove artifacts from a previous release if updating
+          replacesArtifacts: true                 # Replace artifacts if they have the same name
+          token: ${{ secrets.GITHUB_TOKEN }}      # GitHub token for authentication
+          bodyFile: "body.html"                   # File containing the release description (will be the one from the last matrix job)
 
   Build_Armbian: # Job 2: Build Armbian Image using Prebuilt Kernel
     needs: build_kernel # This job depends on the successful completion of build_kernel
@@ -281,6 +317,7 @@ jobs:
             BRANCH="${{ inputs.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
             KERNEL_CONFIGURE="no" \
+            KERNEL_ONLY="no" \
             BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
             BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
             DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
@@ -314,7 +351,7 @@ jobs:
               <br>
 
               - Board: ${{ matrix.BOARD }}
-              - Kernel Branch (used for prebuilt kernel): ${{ inputs.BRANCH }}
+              - Kernel : ${{ inputs.BRANCH }}
               - OS Release: ${{ matrix.RELEASE }}
               - Desktop: ${{ inputs.DESKTOP }}
               - Verification: sha256sum
@@ -329,14 +366,9 @@ jobs:
         uses: ncipollo/release-action@main
         if: success()
         with:
-          # The Git tag to create for this release.
-          # All matrix builds will upload to this same tag if VERSIONOS is the same.
           tag: "Armbian_V${{ env.VERSIONOS }}"
-          # The name of the GitHub Release.
           name: "Armbian_V${{ env.VERSIONOS }}"
-          artifacts: |       # Path to the image artifacts to upload
-            build/output/images/*
-            build/output/debs/linux-*.deb
+          artifacts: "build/output/images/*"      # Path to the image artifacts to upload
           allowUpdates: true                      # Allow updating an existing release with the same tag
           removeArtifacts: false                  # Do not remove artifacts from a previous release if updating
           replacesArtifacts: true                 # Replace artifacts if they have the same name
