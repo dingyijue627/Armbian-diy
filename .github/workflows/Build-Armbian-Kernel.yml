@@ -131,7 +131,6 @@ jobs:
           ./compile.sh \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ inputs.BRANCH }}" \
-
             RELEASE="bookworm" \
             KERNEL_CONFIGURE="no" \
             BUILD_DESKTOP="no" \
@@ -156,23 +155,7 @@ jobs:
           echo "Attempting to rename kernel packages in build/output/debs/"
           cd build/output/debs
           for old_name in linux-*.deb; do
-            # 检查文件是否存在，以防通配符没有匹配到任何文件
             if [ -f "$old_name" ]; then
-              # 使用 sed 进行重命名
-              # 正则表达式解释:
-              # (linux-.*__                  ): 捕获组1, 例如 "linux-dtb-edge-rockchip64_25.08.0-trunk_arm64__"
-              # ([0-9]+\.[0-9]+\.[0-9]+)    ): 捕获组2, 例如 "6.15.0"
-              # -[a-zA-Z0-9.-]+             : 匹配并丢弃详细的版本字符串, 例如 "-S0ff4-Dca91-Pa442-Cc0cdH3d80-HK01ba-Vc222-Ba566-R448a"
-              #                                注意: [a-zA-Z0-9.-]+ 匹配一个或多个字母、数字、点或连字符。如果你的详细版本字符串包含其他字符，需要调整。
-              # (\.deb)$                     : 捕获组3 (原捕获组4，因为上一个匹配部分不捕获), ".deb" 文件扩展名
-              
-              # 更简单且可能更健壮的模式，假设详细版本信息总是在 __X.Y.Z- 之后
-              # (                            : 捕获组1 开始
-              #   linux-.*__                 :   匹配 "linux-" 开头，直到并包括 "__"
-              #   [0-9]+\.[0-9]+\.[0-9]+     :   匹配主内核版本号，如 "6.15.0"
-              # )                            : 捕获组1 结束
-              # -.*                          : 匹配第一个连字符及其后的所有字符，直到扩展名（这部分将被替换）
-              # (\.deb)$                     : 捕获组2, ".deb" 文件扩展名
               new_name=$(echo "$old_name" | sed -E 's/(linux-.*__[0-9]+\.[0-9]+\.[0-9]+)-.*(\.deb)$/\1..\2/')
 
               if [[ "$old_name" != "$new_name" ]]; then
@@ -187,8 +170,6 @@ jobs:
           done
           echo "Listing renamed kernel packages:"
           ls -l
-          # 返回到原工作目录的 build 文件夹的上级，即 GITHUB_WORKSPACE
-          # compile.sh 之前是在 GITHUB_WORKSPACE/build 执行的
           cd ../../.. 
 
       - name: "Upload Kernel Artifact"
@@ -199,7 +180,7 @@ jobs:
             build/output/debs/*.deb
           if-no-files-found: error # Fail if no .deb files are found
 
-  Armbian: # Job 2: Build Armbian Image using Prebuilt Kernel
+  Build_Armbian: # Job 2: Build Armbian Image using Prebuilt Kernel
     needs: build_kernel # This job depends on the successful completion of build_kernel
     runs-on: ubuntu-22.04
     strategy:
