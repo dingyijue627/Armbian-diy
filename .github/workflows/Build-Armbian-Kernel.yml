@@ -2,8 +2,6 @@ name: "Armbian Build Kernel Image"
 on:
   workflow_dispatch:
     inputs:
-
-      # --- Build Configuration ---
       DESKTOP:
         type: choice
         description: "Desktop environment"
