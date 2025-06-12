@@ -54,6 +54,7 @@ jobs:
   Build_Kernel:
     name: "Build Kernel [${{ matrix.BOARD }} ${{ matrix.BRANCH }}]"
     runs-on: ubuntu-22.04
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
