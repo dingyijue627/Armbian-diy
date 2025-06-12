@@ -2,7 +2,6 @@
 /*
  * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
  * Device Tree Source for LemonPi board on Rockchip RK3588 SoC.
- * Kernel Version Target: 6.15
  *
  */
 
@@ -288,7 +287,7 @@
 /* I2S0 8-channel audio interface */
 &i2s0_8ch {
 	status = "okay";
-	rockchip,clk-trcm = <1>;
+	rockchip,clk-trcm = <0>;
 	pinctrl-names = "default"; 
 	pinctrl-0 = <&i2s0_lrck
 		     &i2s0_mclk
@@ -572,6 +571,20 @@
 		AVDD-supply = <&avcc_1v8_s0>;
 		PVDD-supply = <&vcc_3v3_s0>;
 		HPVDD-supply = <&vcc_3v3_s0>;
+	};
+};
+
+&sfc {
+	status = "disabled"; 
+	pinctrl-names = "default";
+	pinctrl-0 = <&fspim0_pins>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0x0>;
+		spi-max-frequency = <100000000>;
+		spi-rx-bus-width = <4>; 
+		spi-tx-bus-width = <1>;
 	};
 };
 
@@ -1189,6 +1202,7 @@
 &pcie3x4 {
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_sys>;
+	num-lanes = <4>;
 	status = "okay";
 };
 
@@ -1218,9 +1232,9 @@
 
 /* SATA-PCIe controller */
 &sata0{
-	status = "okay";
 	ahci-supply = <&vcc_1v8_s0>;
 	phy-supply = <&avcc_1v8_s0>; 
+	status = "okay";
 };
 
 /* Debug UART2 */

@@ -2,7 +2,6 @@
 /*
  * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
  * Device Tree Source for SOM3588Cat board on Rockchip RK3588 SoC.
- * Kernel Version Target: 6.15
  *
  */
 

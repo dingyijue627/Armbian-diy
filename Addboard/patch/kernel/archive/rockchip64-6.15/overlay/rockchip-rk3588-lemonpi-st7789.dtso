@@ -2,9 +2,10 @@
 /dts-v1/;
 /plugin/;
 
-/ {
-    compatible = "rockchip,rk3588-lemonpi";
+#include <dt-bindings/pinctrl/rockchip.h>
+#include <dt-bindings/gpio/gpio.h>
 
+/ {
     fragment@0 {
         target = <&spi0>;
         __overlay__ {
