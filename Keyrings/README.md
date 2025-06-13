@@ -10,8 +10,6 @@
 
 请在您的 Armbian 设备终端中执行以下命令，它将把 GPG 密钥复制到系统的标准密钥环目录中。
 
-# 通过网络直接安装密钥
-
 ```bash
 sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/SOM3588Cat-Armbian/main/Keyrings/armbian-actions.gpg" -o /usr/share/keyrings/armbian-actions.gpg
 ```
