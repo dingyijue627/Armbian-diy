@@ -96,7 +96,7 @@ jobs:
         id: set_matrix
         run: |
           # 从 env 读取，并转换为 JSON 数组字符串
-          JSON_RELEASES=$(echo '${{ env.RELEASES }}' | jq -R 'split(" ")')
+          JSON_RELEASES=$(echo "${{ env.RELEASES }}" | jq -c -R 'split(" ")')
           echo "releases=${JSON_RELEASES}" >> $GITHUB_OUTPUT
 
   # ====================================================================
