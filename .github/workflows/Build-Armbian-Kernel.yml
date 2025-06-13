@@ -170,7 +170,7 @@ jobs:
       matrix:
         BOARD: [ lemonpi, som3588-cat ]
         BRANCH: [ edge, vendor ]
-        RELEASE: ${{ fromJson(format('["{0}"]', split(env.RELEASES, ' ') | join('","'))) }}
+        RELEASE: ${{ split(env.RELEASES, ' ') }}
 
     steps:
       - name: "Checkout Board Source"
