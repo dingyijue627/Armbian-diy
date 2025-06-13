@@ -410,14 +410,21 @@ jobs:
         run: |
           mkdir -p repo/conf
           > repo/conf/distributions
+
+          COMPONENTS="main" # 保持一个通用的 'main' 组件
+          for dir in artifacts/debs/kernel-debs-*/; do
+            variant=$(basename "$dir" | sed 's/kernel-debs-//')
+            COMPONENTS="${COMPONENTS} ${variant}"
+          done
+          
           for codename in $RELEASES; do
-            echo "Generating config for $codename..."
+            echo "Generating config for $codename with components:${COMPONENTS}"
             cat <<EOF >> repo/conf/distributions
           Origin: My Armbian Builds
           Label: My Armbian
           Codename: ${codename}
           Architectures: arm64
-          Components: main
+          Components: ${COMPONENTS}
           Description: Custom APT repository for my Armbian builds
           SignWith: ${{ env.GPG_KEY_ID }}
 
@@ -429,13 +436,19 @@ jobs:
       - name: "Add all DEB packages to each distribution"
         shell: bash
         run: |
-          for codename in $RELEASES; do
-            echo "--- Adding all available .deb packages to distribution: ${codename} ---"
-            find artifacts/debs -type f -name '*.deb' -print0 | \
-              xargs -0 -r reprepro -b repo/ -V includedeb ${codename}
-            if [ $? -ne 0 ]; then
-                echo "Warning: reprepro command failed while processing packages for ${codename}."
-            fi
+          for deb_dir in artifacts/debs/kernel-debs-*/; do
+            component=$(basename "$deb_dir" | sed 's/kernel-debs-//')
+            
+            echo "--- Processing packages from ${deb_dir} for component: ${component} ---"
+
+            for codename in $RELEASES; do
+              echo "Adding packages to distribution '${codename}' component '${component}'"
+              reprepro -b repo/ -V --ignore=wrongdistribution -C ${component} includedeb ${codename} ${deb_dir}/*.deb
+              if [ $? -ne 0 ]; then
+                  echo "::error::reprepro failed for ${codename}/${component} with packages from ${deb_dir}"
+                  exit 1
+              fi
+            done
           done
 
       - name: "Deploy repository to GitHub Pages"
