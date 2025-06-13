@@ -214,14 +214,12 @@ jobs:
             DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
             DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
             ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS }}" \
-            BOARD_FIRMWARE_INSTALL="-full" \
             SHARE_LOG="yes" \
             BETA="${{ inputs.nightly }}" \
             PREFER_DOCKER="${{ inputs.DOCKER }}" \
             ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
             EXPERT="yes" \
             VENDOR=Armbian \
-            IMAGE_XZ_COMPRESSION_RATIO=8 \
             COMPRESS_OUTPUTIMAGE=sha,gpg,xz
 
       - name: "Upload Image Artifact"
@@ -230,6 +228,17 @@ jobs:
           name: armbian-image-${{ matrix.BOARD }}-${{ matrix.BRANCH }}-${{ matrix.RELEASE }}
           path: build/output/images/*
           if-no-files-found: error
+          
+      - name: "Record Matrix Info"
+        shell: bash
+        run: |
+          echo "${{ matrix.BOARD }},${{ matrix.BRANCH }}" > matrix-info.txt
+
+      - name: "Upload Matrix Info Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-info-${{ matrix.BOARD }}-${{ matrix.BRANCH }}
+          path: matrix-info.txt
 
   # ====================================================================
   # JOB 3: Publish GitHub Release
@@ -257,70 +266,63 @@ jobs:
         shell: bash
         run: |
           set -eo pipefail
-          echo "Searching for linux-*.deb files..."
+          echo "--- Simplifying linux-*.deb filenames for release ---"
+          
           find artifacts/kernel-debs-*/ -type f -name 'linux-*.deb' | while read -r filepath; do
             dir=$(dirname "$filepath")
             old_name=$(basename "$filepath")
-            
-            new_name=$(echo "$old_name" | sed -E 's/(-[A-Za-z0-9].*)(\.deb)$/\2/')
-            
+            new_name=$(echo "$old_name" | sed -E 's/^(.*__[0-9.]+).*\.deb$/\1.deb/')
             if [[ "$old_name" != "$new_name" ]]; then
               mv -v "$filepath" "$dir/$new_name"
-              echo "Renamed '$old_name' to '$new_name'"
-            else
-              echo "Filename '$old_name' did not require renaming."
             fi
           done
           
-          echo "--- Final artifact structure after renaming ---"
-          ls -R artifacts
+          echo "--- Final list of kernel packages after simplification ---"
+          ls -R artifacts/kernel-debs-*/
           
       - name: "Generate Release Body"
-        # Create a single, consolidated body.html for the release notes.
         id: generate_body
         shell: bash
         run: |
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
 
-          # Use HEREDOC to create the release body
-          cat > body.html <<EOF
-          <p align='center'><a href='https://www.armbian.com'><img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
-          <h1 align=center>Armbian OS - Build V${{ env.VERSIONOS }}</h1>
-          <p align='center'>
-            <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
-            <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https://github.com/armbian/scripts/releases/download/status/runners_capacity.json'></a>
-          </p>
-
-          ## 🚀 Build Summary
-          *   **Desktop:** \`${{ inputs.DESKTOP }}\`
-          *   **Filesystem:** \`${{ inputs.ROOTFS }}\`
-          *   **Build Type:** \`${{ inputs.nightly == 'yes' && 'Nightly' || 'Stable' }}\`
-
-          ---
-          ## 📦 Artifacts
-          This release contains kernel packages and full OS images for the following configurations. All artifacts are verified with `sha256sum`, and images also include a `.gpg` signature.
-
-          ### Kernel Packages
-          - **Branches:** \`edge\`, \`vendor\`
-          - **Boards:** \`lemonpi\`, \`som3588-cat\`
-
-          ### Armbian Images
-          - **Boards:** \`lemonpi\`, \`som3588-cat\`
-          - **OS Releases:** \`oracular\`, \`plucky\`, \`bookworm\`, \`trixie\`
-          <br>
-          > **Note:** Rolling releases are not recommended for production environments.
-          EOF
+          BUILT_BOARDS=$(cat artifacts/matrix-info*/*.txt | cut -d',' -f1 | sort -u | paste -sd ', ' -)
+          BUILT_BRANCHES=$(cat artifacts/matrix-info*/*.txt | cut -d',' -f2 | sort -u | paste -sd ', ' -)
           
-          # Set the path for all artifacts to be uploaded
-          echo "ARTIFACT_PATH=artifacts/*/*" >> $GITHUB_OUTPUT
+          echo "
+            <p align='center'>
+            <a href='https://www.armbian.com'>
+            <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
+            <h1 align=center>Armbian OS</h1>
+            <p align=center>
+            <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+            <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+            </p>
+            <br>
+
+            - **Board**: ${BUILT_BOARDS}
+            - **Kernel**: ${BUILT_BRANCHES}
+            - **Desktop**: ${{ inputs.DESKTOP }}
+            - **Build Type**: ${{ inputs.nightly == 'yes' && 'Nightly' || 'Stable' }}
+            - **Verification**: sha256sum 
+
+            <br>
+            Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
+
+            <br>
+             
+            </p>" > body.html
 
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
         with:
           tag: "Armbian_V${{ env.VERSIONOS }}"
           name: "Armbian_V${{ env.VERSIONOS }}"
-          artifacts: "${{ steps.generate_body.outputs.ARTIFACT_PATH }}" 
+          artifacts: |
+            artifacts/armbian-image*/**/*
+            artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          bodyFile: "body.html" 
+          bodyFile: "body.html"
+          makeLatest: true
