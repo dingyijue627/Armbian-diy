@@ -11,7 +11,7 @@
 请在您的 Armbian 设备终端中执行以下命令，它将把 GPG 密钥复制到系统的标准密钥环目录中。
 
 ```bash
-sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/SOM3588Cat-Armbian/main/Keyrings/armbian-actions.gpg" -o /usr/share/keyrings/armbian-actions.gpg
+sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/Armbian-Actions/main/Keyrings/armbian-actions.gpg" -o /usr/share/keyrings/armbian-actions.gpg
 ```
 
 ### 第二步：添加软件源
@@ -23,7 +23,7 @@ sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/SOM3588Cat-Armbian
 ```bash
 cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
 Types: deb
-URIs: https://YANXIAOXIH.github.io/SOM3588Cat-Armbian/
+URIs: https://YANXIAOXIH.github.io/Armbian-Actions/
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: main
 Architectures: $(dpkg --print-architecture)
@@ -39,7 +39,7 @@ EOF
     ```bash
     sudo apt update
     ```
-    您应该能在输出中看到一条指向 `https://YANXIAOXIH.github.io/SOM3588Cat-Armbian/` 的信息。
+    您应该能在输出中看到一条指向 `https://YANXIAOXIH.github.io/Armbian-Actions/` 的信息。
 
 2.  **执行系统升级：**
     ```bash

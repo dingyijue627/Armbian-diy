@@ -1,70 +1,95 @@
-## 项目概述
-SOM3588Cat是基于 Rockchip RK3588 处理器的 SOM（System on Module）开发板，专为高性能嵌入式应用设计。该项目通过 GitHub Actions 实现自动化云编译，方便开发者快速构建和部署基于 Armbian 的系统。
+# Armbian-Actions: 自动化 Armbian 构建平台
 
-## 开发板特性
+[![Build Status](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Kernel.yml/badge.svg)](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Kernel.yml)
 
-- **处理器**：Rockchip RK3588，八核高性能处理器。
-- **内存**：16GB/32GB LPDDR4/4X。
-- **存储**：支持 NVMe SSD 和 eMMC。
-- **接口**：
-  - USB 3.0 。
-  - Gigabit 以太网 (GBE)。
-  - HDMI 视频输出。
-  - Wi-Fi 和蓝牙 (Wi-Fi/BT)。
-  - Type-C 接口。
-- **扩展性**：支持 SPI 和其他常用扩展接口。
-- **兼容性**：Lubancat5 开发板
+### 📝 项目概述
 
-## 项目优势
+**Armbian-Actions** 是一个基于 GitHub Actions 的自动化 Armbian 系统编译平台。它旨在为开发者提供一个高效、灵活且无需本地环境配置的云端编译解决方案，支持多种 ARM 开发板和定制化需求。
 
-- **云编译**：通过 GitHub Actions 实现自动化编译，节省本地资源，加快开发周期。
-- **Armbian 支持**：基于 Armbian 社区开发，提供稳定、优化的 Linux 系统体验。
-- **音频管理**：集成音频设备重命名功能，方便用户识别和配置多个音频接口。
-- **灵活配置**：支持多种启动场景和设备树配置，满足不同项目需求。
+本项目最初为 `SOM3588-Cat` (基于 Rockchip RK3588) 开发，现已扩展为一个更通用的工具，方便任何希望通过云端自动化构建 Armbian 镜像的开发者。
 
-## 项目目标
+---
 
-- 提供一个高效、稳定的开发环境，助力开发者快速实现基于 RK3588 的嵌入式项目。
-- 通过自动化编译和社区支持，降低开发门槛，提升开发效率。
+### ✨ 平台优势
 
-## 适用场景
+-   **🚀 云端自动化**：完全基于 GitHub Actions，一键触发编译，无需占用本地计算资源，随时随地构建您的系统。
+-   **🧩 高度可定制**：轻松选择不同的桌面环境、内核分支、文件系统，并集成自定义的 Armbian 扩展包。
+-   **📦 APT 仓库集成**：自动化构建和发布内核 `.deb` 包，并将其推送到一个多发行版（multi-distribution）的 APT 仓库，方便下游系统更新。
+-   **🌐 灵活触发**：支持手动触发（`workflow_dispatch`）和定时触发（`schedule`），满足调试和每日构建的需求。
+-   **⚙️ Armbian 官方框架**：基于官方的 [Armbian Build Framework](https://github.com/armbian/build)，确保构建过程的稳定性和可靠性。
 
-- **嵌入式开发**：适用于高性能嵌入式应用的开发和部署。
-- **多媒体设备**：支持多路 HDMI 和Type-C 输出，适合多媒体设备开发。
-- **工业控制**：支持多种扩展接口，适用于工业自动化和控制应用。
+---
 
-## 如何使用
+### 🛠️ 如何使用
 
-### 1. 触发编译
+本平台的核心是一个强大的 GitHub Actions 工作流。您可以 Fork 本仓库，并根据您的需求进行配置。
 
-- 手动触发 GitHub Actions 工作流。
-- 编译完成后，编译输出（镜像文件）将存储在 GitHub 的 Actions Artifacts 中。
+#### 1. Fork 本仓库
 
-### 2. 下载和部署
+点击页面右上角的 **Fork** 按钮，将此仓库复刻到您自己的 GitHub 账户下。
 
-- 从 Actions Artifacts 下载编译好的镜像文件。
-- 将镜像文件写入 SD 卡或目标存储设备。
-- 插入 SOM3588Cat 开发板，启动系统。
+#### 2. 配置您的仓库
 
-### 3. 验证和配置
+##### 添加 Secrets
+为了让工作流能够正常发布 Release 和更新 APT 仓库，您需要在您的 Fork 仓库中设置以下 Secrets (`Settings > Secrets and variables > Actions`):
 
-- 系统启动后，登录并验证硬件设备识别情况。
-- 使用预配置的音频设备重命名功能，确保音频设备正确识别。
-- 根据项目需求，进一步配置系统和应用。
+-   `GPG_PRIVATE_KEY`: 您的 GPG 私钥，用于签名镜像和 APT 仓库。
+-   `GPG_PASSPHRASE`: 您的 GPG 私钥密码。
+-   `GPG_SIGNING_KEY_ID`: 您的 GPG 密钥 ID (长ID)。
 
-## 贡献代码
+##### 定制构建目标
+-   打开 `.github/workflows/Build-Armbian-Kernel.yml` 文件。
+-   **修改开发板**: 在 `Build_Kernel` Job 的 `strategy.matrix` 下，找到 `BOARD` 列表，将其中的内容替换为您想构建的开发板型号。
+  ```yaml
+  # 示例:
+  strategy:
+    matrix:
+      BOARD: [ orange-pi-5, rock-5b ] # 在这里修改
+  ```
+-   **修改发行版**: 在文件顶部的 `env` 部分，找到 `RELEASES` 变量，修改其值为您想要支持的 Debian/Ubuntu 发行版代号。
+  ```yaml
+  # 示例:
+  env:
+    RELEASES: "bookworm trixie" # 在这里修改
+  ```
 
-欢迎开发者贡献代码，优化功能，推动项目发展。贡献步骤如下：
+#### 3. 触发编译
 
-1. Fork 项目仓库。
-2. 创建功能分支。
-3. 提交代码更改。
-4. 提交 Pull Request。
+进入您的 Fork 仓库的 **Actions** 页面，找到 "Armbian Build Kernel Image" 工作流，然后点击 **Run workflow**。您可以根据需要填写以下参数：
 
-## 社区支持
+-   `DESKTOP`: 选择您想要的桌面环境，或选择 `server` / `minimal`。
+-   `ROOTFS`: 选择根文件系统类型，如 `ext4` 或 `btrfs`。
+-   `nightly`: 选择构建类型，`yes` 为每日构建，`no` 为稳定版。
+-   ...以及其他自定义参数。
 
-- **GitHub 仓库**：[SOM3588Cat-Armbian](https://github.com/YANXIAOXIH/SOM3588Cat-Armbian)
-- **Armbian 社区**：[Armbian 论坛](https://forum.armbian.com/)
-- **Rockchip 开发者社区**：[Rockchip 开发者中心](https://www.rock-chips.com/)
+#### 4. 获取产物
 
-通过 SOM3588Cat-Armbian 项目，开发者可以充分利用 Rockchip RK3588 的高性能和丰富接口，结合 Armbian 的稳定性和 GitHub Actions 的便捷性，快速实现各种创新应用。
+编译完成后，您可以在两个地方找到构建产物：
+
+-   **GitHub Releases**: 完整的镜像文件 (`.img.xz`) 和内核包 (`.deb`) 会被发布到您仓库的 **Releases** 页面。
+-   **GitHub Pages APT 仓库**: 内核包会自动发布到由 GitHub Pages 托管的 APT 仓库中。
+
+#### 5. 在您的设备上使用 APT 软件源
+
+为了方便地接收内核更新，您可以将本项目生成的 APT 仓库添加到您的 Armbian 设备中。详细步骤请参考我们的 [**软件源配置指南**](./Keyrings/README.md)。
+
+---
+
+### 🤝 贡献
+
+欢迎所有开发者一起改进这个自动化平台！如果您有新的想法、功能优化或 Bug 修复，请遵循以下步骤：
+
+1.  Fork 本仓库。
+2.  创建一个新的功能分支 (`git checkout -b feature/your-idea`)。
+3.  提交您的代码更改。
+4.  向本仓库 (`YANXIAOXIH/Armbian-Actions`) 提交一个 Pull Request。
+
+---
+
+### 💬 社区与支持
+
+-   **GitHub 仓库**: [YANXIAOXIH/Armbian-Actions](https://github.com/YANXIAOXIH/Armbian-Actions)
+-   **Armbian 社区**: [Armbian 论坛](https://forum.armbian.com/)
+-   **Rockchip 开发者社区**: [Rockchip 开发者中心](https://www.rock-chips.com/)
+
+通过 **Armbian-Actions**，我们希望将强大的 Armbian 生态与现代化的 CI/CD 流程结合，为嵌入式开发社区提供一个更加便捷、高效的工具。
