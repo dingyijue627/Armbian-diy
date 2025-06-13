@@ -53,6 +53,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
   group: ${{ github.workflow }}
@@ -335,8 +336,8 @@ jobs:
         run: |
           echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
 
-          BUILT_BOARDS=$(cat artifacts/matrix-info*/*.txt | cut -d',' -f1 | sort -u | paste -sd ', ' -)
-          BUILT_BRANCHES=$(cat artifacts/matrix-info*/*.txt | cut -d',' -f2 | sort -u | paste -sd ', ' -)
+          BUILT_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
+          BUILT_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
           
           echo "
             <p align='center'>
@@ -384,6 +385,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [Prepare_Build, Publish_Release]
     if: success()
+    env:
+      # Expose the GPG Key ID to the job's environment for use in the script
+      GPG_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
 
     steps:
       - name: "Download all kernel DEB packages"
@@ -415,35 +419,22 @@ jobs:
           Architectures: arm64
           Components: main
           Description: Custom APT repository for my Armbian builds
-          SignWith: ${{ secrets.GPG_SIGNING_KEY_ID }}
+          SignWith: ${{ env.GPG_KEY_ID }}
 
           EOF
           done
           echo "--- Final distributions config ---"
           cat repo/conf/distributions
 
-      - name: "Add specific DEB packages to each distribution"
+      - name: "Add all DEB packages to each distribution"
         shell: bash
         run: |
           for codename in $RELEASES; do
-            echo "--- Processing packages for distribution: ${codename} ---"
-            
-            local branch_to_add=""
-            if [[ "$codename" == "bookworm" ]]; then
-              branch_to_add="vendor"
-            else
-              branch_to_add="edge"
-            fi
-            
-            echo "Will add '${branch_to_add}' kernel packages to '${codename}'."
-
-            find artifacts/debs -path "*/kernel-debs-*-${branch_to_add}/*" -name '*.deb' -print0 | \
-              xargs -0 -r -I {} reprepro -b repo/ -V includedeb ${codename} {}
-
+            echo "--- Adding all available .deb packages to distribution: ${codename} ---"
+            find artifacts/debs -type f -name '*.deb' -print0 | \
+              xargs -0 -r reprepro -b repo/ -V includedeb ${codename}
             if [ $? -ne 0 ]; then
-                echo "Warning: reprepro might have failed to add packages for ${codename}."
-            elif ! find artifacts/debs -path "*/kernel-debs-*-${branch_to_add}/*" -name '*.deb' | read; then
-                echo "Info: No .deb files found for branch '${branch_to_add}'."
+                echo "Warning: reprepro command failed while processing packages for ${codename}."
             fi
           done
 
