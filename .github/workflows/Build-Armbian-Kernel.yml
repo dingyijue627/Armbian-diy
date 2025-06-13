@@ -1,5 +1,9 @@
 name: "Armbian Build Kernel Image"
 on:
+
+  schedule:
+   - cron: '0 1 * * *'
+
   workflow_dispatch:
     inputs:
       DESKTOP:
@@ -47,11 +51,44 @@ on:
         - btrfs
         default: 'ext4'
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  RELEASES: "oracular plucky bookworm trixie"
+
 jobs:
+  # ====================================================================
+  # JOB 0: Setup Parameters based on Trigger Type
+  # ====================================================================
+  Setup_Parameters:
+    name: "Setup Build Parameters"
+    runs-on: ubuntu-latest
+    outputs:
+      desktop: ${{ github.event_name == 'schedule' && 'server' || inputs.DESKTOP }}
+      nightly: ${{ github.event_name == 'schedule' && 'no' || inputs.nightly }}
+      docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}
+      rootfs: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}
+      enable_extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}
+    steps:
+      - name: "Log effective parameters"
+        run: |
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Desktop: ${{ github.event_name == 'schedule' && 'server' || inputs.DESKTOP }}"
+          echo "Nightly: ${{ github.event_name == 'schedule' && 'no' || inputs.nightly }}"
+          echo "Docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}"
+          echo "RootFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}"
+          echo "Extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}"
+
   # ====================================================================
   # JOB 1: Build Kernel Packages
   # ====================================================================
   Build_Kernel:
+    needs: Setup_Parameters
     name: "Build Kernel [${{ matrix.BOARD }} ${{ matrix.BRANCH }}]"
     runs-on: ubuntu-22.04
     timeout-minutes: 150
@@ -62,6 +99,7 @@ jobs:
         BRANCH: [edge, vendor]
 
     steps:
+
       - name: "Checkout Board Source"
         uses: actions/checkout@v4
         with:
@@ -108,8 +146,8 @@ jobs:
             BUILD_DESKTOP="no" \
             BUILD_MINIMAL="yes" \
             SHARE_LOG="yes" \
-            BETA="${{ inputs.nightly }}" \
-            PREFER_DOCKER="${{ inputs.DOCKER }}" \
+            BETA="${{ needs.Setup_Parameters.outputs.nightly }}" \
+            PREFER_DOCKER="${{ needs.Setup_Parameters.outputs.docker }}" \
             EXPERT="yes" \
             VENDOR=Armbian
 
@@ -125,14 +163,15 @@ jobs:
   # ====================================================================
   Build_Image:
     name: "Build Image [${{ matrix.BOARD }} ${{ matrix.BRANCH }} ${{ matrix.RELEASE }}]"
-    needs: Build_Kernel
+    needs: [Setup_Parameters, Build_Kernel]
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         BOARD: [ lemonpi, som3588-cat ]
         BRANCH: [ edge, vendor ]
-        RELEASE: [ oracular, plucky, bookworm, trixie ]
+        RELEASE: ${{ fromJson(format('["{0}"]', split(env.RELEASES, ' ') | join('","'))) }}
+
     steps:
       - name: "Checkout Board Source"
         uses: actions/checkout@v4
@@ -169,21 +208,19 @@ jobs:
           # Update and clean the runner environment
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
-
+          sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          
           # Set desktop related build flags
-          if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
+          if [[ "${{ needs.Setup_Parameters.outputs.desktop }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
-          elif [[ "${{ inputs.DESKTOP }}" == "server" ]]; then
+          elif [[ "${{ needs.Setup_Parameters.outputs.desktop }}" == "server" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
           else
             echo "BUILD_DESKTOP="yes"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
-            echo "DESKTOP_ENVIRONMENT="${{ inputs.DESKTOP }}"" >> $GITHUB_ENV
+            echo "DESKTOP_ENVIRONMENT="${{ needs.Setup_Parameters.outputs.desktop }}"" >> $GITHUB_ENV
             echo "DESKTOP_APPGROUPS_SELECTED="browsers"" >> $GITHUB_ENV
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
@@ -197,6 +234,12 @@ jobs:
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
           cp -v ./prebuilt-kernel-debs/*.deb ./build/output/debs/
+          
+      - name: "Import GPG Key for Signing Images"
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: "Compile Image [${{ matrix.BOARD }} ${{ matrix.RELEASE }}]"
         shell: bash
@@ -213,11 +256,11 @@ jobs:
             DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
             DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
             DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-            ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS }}" \
+            ENABLE_EXTENSIONS="${{ needs.Setup_Parameters.outputs.enable_extensions }}" \
             SHARE_LOG="yes" \
-            BETA="${{ inputs.nightly }}" \
-            PREFER_DOCKER="${{ inputs.DOCKER }}" \
-            ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
+            BETA="${{ needs.Setup_Parameters.outputs.nightly }}" \
+            PREFER_DOCKER="${{ needs.Setup_Parameters.outputs.docker }}" \
+            ROOTFS_TYPE="${{ needs.Setup_Parameters.outputs.rootfs }}" \
             EXPERT="yes" \
             VENDOR=Armbian \
             COMPRESS_OUTPUTIMAGE=sha,gpg,xz
@@ -246,7 +289,7 @@ jobs:
   Publish_Release:
     name: "Publish GitHub Release"
     runs-on: ubuntu-latest
-    needs: [Build_Kernel, Build_Image]
+    needs: [Setup_Parameters, Build_Image]
     if: success()
 
     steps:
@@ -269,12 +312,9 @@ jobs:
           echo "--- Simplifying linux-*.deb filenames for release ---"
           
           find artifacts/kernel-debs-*/ -type f -name 'linux-*.deb' | while read -r filepath; do
-            dir=$(dirname "$filepath")
-            old_name=$(basename "$filepath")
+            dir=$(dirname "$filepath"); old_name=$(basename "$filepath")
             new_name=$(echo "$old_name" | sed -E 's/^(.*__[0-9.]+).*\.deb$/\1.deb/')
-            if [[ "$old_name" != "$new_name" ]]; then
-              mv -v "$filepath" "$dir/$new_name"
-            fi
+            if [[ "$old_name" != "$new_name" ]]; then mv -v "$filepath" "$dir/$new_name"; fi
           done
           
           echo "--- Final list of kernel packages after simplification ---"
@@ -302,8 +342,8 @@ jobs:
 
             - **Board**: ${BUILT_BOARDS}
             - **Kernel**: ${BUILT_BRANCHES}
-            - **Desktop**: ${{ inputs.DESKTOP }}
-            - **Build Type**: ${{ inputs.nightly == 'yes' && 'Nightly' || 'Stable' }}
+            - **Desktop**: ${{ needs.Setup_Parameters.outputs.desktop }}
+            - **Build Type**: ${{ needs.Setup_Parameters.outputs.nightly == 'yes' && 'Nightly' || 'Stable' }}
             - **Verification**: sha256sum 
 
             <br>
@@ -326,3 +366,81 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           bodyFile: "body.html"
           makeLatest: true
+
+  # ====================================================================
+  # JOB 4: Update APT Repository
+  # ====================================================================
+  Update_APT_Repo:
+    name: "Update APT Repository"
+    runs-on: ubuntu-latest
+    needs: [Setup_Parameters, Publish_Release]
+    if: success()
+
+    steps:
+      - name: "Download all kernel DEB packages"
+        uses: actions/download-artifact@v4
+        with:
+          pattern: kernel-debs-*
+          path: artifacts/debs
+
+      - name: "Import GPG Key"
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: "Install APT repository tools"
+        run: sudo apt-get update && sudo apt-get install -y reprepro
+
+      - name: "Setup APT Repository Structure for Multiple Distributions"
+        shell: bash
+        run: |
+          mkdir -p repo/conf
+          > repo/conf/distributions
+          for codename in $RELEASES; do
+            echo "Generating config for $codename..."
+            cat <<EOF >> repo/conf/distributions
+          Origin: My Armbian Builds
+          Label: My Armbian
+          Codename: ${codename}
+          Architectures: arm64
+          Components: main
+          Description: Custom APT repository for my Armbian builds
+          SignWith: ${{ secrets.GPG_SIGNING_KEY_ID }}
+
+          EOF
+          done
+          echo "--- Final distributions config ---"
+          cat repo/conf/distributions
+
+      - name: "Add specific DEB packages to each distribution"
+        shell: bash
+        run: |
+          for codename in $RELEASES; do
+            echo "--- Processing packages for distribution: ${codename} ---"
+            
+            local branch_to_add=""
+            if [[ "$codename" == "bookworm" ]]; then
+              branch_to_add="vendor"
+            else
+              branch_to_add="edge"
+            fi
+            
+            echo "Will add '${branch_to_add}' kernel packages to '${codename}'."
+
+            find artifacts/debs -path "*/kernel-debs-*-${branch_to_add}/*" -name '*.deb' -print0 | \
+              xargs -0 -r -I {} reprepro -b repo/ -V includedeb ${codename} {}
+
+            if [ $? -ne 0 ]; then
+                echo "Warning: reprepro might have failed to add packages for ${codename}."
+            elif ! find artifacts/debs -path "*/kernel-debs-*-${branch_to_add}/*" -name '*.deb' | read; then
+                echo "Info: No .deb files found for branch '${branch_to_add}'."
+            fi
+          done
+
+      - name: "Deploy repository to GitHub Pages"
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo
+          force_orphan: true
