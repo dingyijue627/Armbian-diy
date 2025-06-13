@@ -83,6 +83,21 @@ jobs:
           echo "Docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}"
           echo "RootFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}"
           echo "Extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}"
+  # ====================================================================
+  # JOB 0.5: Prepare Matrix
+  # ====================================================================
+  Prepare_Matrix:
+    name: "Prepare Build Matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      release_matrix: ${{ steps.set_matrix.outputs.releases }}
+    steps:
+      - name: "Set release matrix"
+        id: set_matrix
+        run: |
+          # 从 env 读取，并转换为 JSON 数组字符串
+          JSON_RELEASES=$(echo '${{ env.RELEASES }}' | jq -R 'split(" ")')
+          echo "releases=${JSON_RELEASES}" >> $GITHUB_OUTPUT
 
   # ====================================================================
   # JOB 1: Build Kernel Packages
@@ -163,14 +178,14 @@ jobs:
   # ====================================================================
   Build_Image:
     name: "Build Image [${{ matrix.BOARD }} ${{ matrix.BRANCH }} ${{ matrix.RELEASE }}]"
-    needs: [Setup_Parameters, Build_Kernel]
+    needs: [Setup_Parameters, Prepare_Matrix, Build_Kernel] # 增加对新 Job 的依赖
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         BOARD: [ lemonpi, som3588-cat ]
         BRANCH: [ edge, vendor ]
-        RELEASE: ${{ split(env.RELEASES, ' ') }}
+        RELEASE: ${{ fromJson(needs.Prepare_Matrix.outputs.release_matrix) }}
 
     steps:
       - name: "Checkout Board Source"
