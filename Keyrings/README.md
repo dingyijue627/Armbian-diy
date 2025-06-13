@@ -10,9 +10,6 @@
 
 请在您的 Armbian 设备终端中执行以下命令，它将把 GPG 密钥复制到系统的标准密钥环目录中。
 
-# 请确保您当前位于 Keyrings 目录下，或者使用正确的相对/绝对路径指向 armbian-actions.gpg 文件
-sudo cp armbian-actions.gpg /usr/share/keyrings/
-
 # 通过网络直接安装密钥
 
 ```bash
