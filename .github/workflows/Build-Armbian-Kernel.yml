@@ -1,9 +1,5 @@
 name: "Armbian Build Kernel Image"
 on:
-
-  schedule:
-   - cron: '0 1 * * *'
-
   workflow_dispatch:
     inputs:
       DESKTOP:
