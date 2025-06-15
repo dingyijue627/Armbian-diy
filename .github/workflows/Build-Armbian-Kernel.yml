@@ -1,4 +1,4 @@
-name: "Armbian Build Kernel Image"
+name: "rmbian Build Kernel Image Nightly"
 on:
   workflow_dispatch:
     inputs:
@@ -56,7 +56,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASES: "oracular plucky bookworm trixie"
+  RELEASES: "oracular plucky noble bookworm trixie "
 
 jobs:
   # ====================================================================
@@ -242,9 +242,8 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
 
-          # Set versioning environment variables
-          echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
-          echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
+          ## Set version override if provided
+          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
 
           # Prepare user patches and board files
           mkdir -p ./build/userpatches ./build/output/debs
@@ -263,6 +262,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
+            REVISION="${{ env.ARMBIAN_VERSION }}" \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
@@ -330,7 +330,7 @@ jobs:
         id: generate_body
         shell: bash
         run: |
-          echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
+          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
 
           BUILT_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
           BUILT_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
@@ -338,7 +338,7 @@ jobs:
           echo "
             <p align='center'>
             <a href='https://www.armbian.com'>
-            <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
+            <img src='https://raw.githubusercontent.com/armbian/.github/master/profile/tux-two.png' width='400'></a></p>
             <h1 align=center>Armbian OS</h1>
             <p align=center>
             <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
@@ -362,8 +362,8 @@ jobs:
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
         with:
-          tag: "Armbian_V${{ env.VERSIONOS }}"
-          name: "Armbian_V${{ env.VERSIONOS }}"
+          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
           artifacts: |
             artifacts/armbian-image*/**/*
             artifacts/kernel-debs-*/linux-*.deb
@@ -407,7 +407,7 @@ jobs:
           mkdir -p repo/conf
           > repo/conf/distributions
 
-          COMPONENTS="main" # 保持一个通用的 'main' 组件
+          COMPONENTS="main" # A general 'main' component can be kept if needed
           for dir in artifacts/debs/kernel-debs-*/; do
             variant=$(basename "$dir" | sed 's/kernel-debs-//')
             COMPONENTS="${COMPONENTS} ${variant}"
