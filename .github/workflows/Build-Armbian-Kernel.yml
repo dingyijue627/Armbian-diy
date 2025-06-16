@@ -75,6 +75,7 @@ jobs:
       rootfs: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}
       enable_extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}
       release_matrix: ${{ steps.set_matrix.outputs.releases }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: "Log effective parameters"
         run: |
@@ -85,6 +86,19 @@ jobs:
           echo "Docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}"
           echo "RootFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}"
           echo "Extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}"
+
+      - name: "Checkout OS Source to get Version"
+        uses: actions/checkout@v4
+        with:
+          repository: armbian/os
+          path: os
+
+      - name: "Get Armbian Version"
+        id: get_version
+        run: |
+          version=$(jq -r '.version' os/nightly.json)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "Armbian version for this run: ${version}"
 
       - name: "Set and Log Release Matrix"
         id: set_matrix
@@ -148,6 +162,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="bookworm" \
@@ -245,9 +260,6 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
 
-          ## Set version override if provided
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-
           # Prepare user patches and board files
           mkdir -p ./build/userpatches ./build/output/debs
           cp -rf ./custom/Addboard/* ./build
@@ -265,7 +277,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
-            REVISION="${{ env.ARMBIAN_VERSION }}" \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
@@ -307,13 +319,6 @@ jobs:
         with:
           path: artifacts/
 
-      - name: "Checkout Build System for Version"
-        uses: actions/checkout@v4
-        with:
-          repository: armbian/build
-          ref: main
-          path: build
-
       - name: "Rename Kernel DEBs for Release"
         shell: bash
         run: |
@@ -333,8 +338,7 @@ jobs:
         id: generate_body
         shell: bash
         run: |
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-
+          # This clever logic finds all the unique boards and branches that were successfully built
           BUILT_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
           BUILT_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
           
@@ -353,7 +357,7 @@ jobs:
             - **Kernel**: ${BUILT_BRANCHES}
             - **Desktop**: ${{ needs.Prepare_Build.outputs.desktop }}
             - **Build Type**: ${{ needs.Prepare_Build.outputs.nightly == 'yes' && 'Nightly' || 'Stable' }}
-            - **Verification**: sha256sum 
+            - **Verification**: sha256sum and GPG signature
 
             <br>
             Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
@@ -365,8 +369,8 @@ jobs:
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
         with:
-          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
+          tag: "Armbian_V${{ needs.Prepare_Build.outputs.version }}"
+          name: "Armbian_V${{ needs.Prepare_Build.outputs.version }}"
           artifacts: |
             artifacts/armbian-image*/**/*
             artifacts/kernel-debs-*/linux-*.deb
@@ -382,7 +386,7 @@ jobs:
   Update_APT_Repo:
     name: "Update APT Repository"
     runs-on: ubuntu-latest
-    needs: [Prepare_Build, Publish_Release]
+    needs: [Publish_Release]
     if: success()
     env:
       # Expose the GPG Key ID to the job's environment for use in the script
@@ -404,7 +408,7 @@ jobs:
       - name: "Install APT repository tools"
         run: sudo apt-get update && sudo apt-get install -y reprepro
 
-      - name: "Setup APT Repository Structure for Multiple Distributions"
+      - name: "Setup APT Repository Structure"
         shell: bash
         run: |
           mkdir -p repo/conf
@@ -419,8 +423,8 @@ jobs:
           for codename in $RELEASES; do
             echo "Generating config for $codename with components:${COMPONENTS}"
             cat <<EOF >> repo/conf/distributions
-          Origin: My Armbian Builds
-          Label: My Armbian
+          Origin: Armbian Builds
+          Label: Armbian
           Codename: ${codename}
           Architectures: arm64
           Components: ${COMPONENTS}
