@@ -369,7 +369,7 @@ jobs:
             artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
           replacesArtifacts: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GPG_ACTIONS }}
           bodyFile: "body.html"
           makeLatest: true
 
@@ -450,7 +450,7 @@ jobs:
       - name: "Deploy repository to GitHub Pages"
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GPG_ACTIONS }}
           publish_dir: ./repo
           publish_branch: apt-repo
           force_orphan: true
