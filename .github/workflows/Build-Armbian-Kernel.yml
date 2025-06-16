@@ -1,5 +1,8 @@
-name: "rmbian Build Kernel Image Nightly"
+name: "Armbian Build Kernel Image Nightly"
 on:
+  schedule:
+    - cron: '30 2 * * 5'
+    
   workflow_dispatch:
     inputs:
       DESKTOP:
@@ -56,7 +59,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASES: "oracular plucky noble bookworm trixie "
+  RELEASES: "oracular plucky noble bookworm trixie"
 
 jobs:
   # ====================================================================
@@ -86,7 +89,7 @@ jobs:
       - name: "Set and Log Release Matrix"
         id: set_matrix
         run: |
-          JSON_RELEASES=$(echo "${{ env.RELEASES }}" | jq -c -R 'split(" ")')
+          JSON_RELEASES=$(echo "${{ env.RELEASES }}" | jq -c -R 'split(" ") | map(select(. != ""))')
           echo "releases=${JSON_RELEASES}" >> $GITHUB_OUTPUT
           echo "--- Release Matrix Generated ---"
           echo "Matrix: ${JSON_RELEASES}"
@@ -369,7 +372,7 @@ jobs:
             artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
           replacesArtifacts: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GPG_ACTIONS }}
           bodyFile: "body.html"
           makeLatest: true
 
@@ -450,7 +453,7 @@ jobs:
       - name: "Deploy repository to GitHub Pages"
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GPG_ACTIONS }}
           publish_dir: ./repo
           publish_branch: apt-repo
           force_orphan: true
