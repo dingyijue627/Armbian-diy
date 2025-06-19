@@ -97,7 +97,7 @@ jobs:
       - name: "Set and Log Release Matrix"
         id: set_matrix
         run: |
-          JSON_RELEASES=$(echo "${{ env.RELEASES }}" | jq -c -R 'split(" ") | map(select(. != ""))')            
+          JSON_RELEASES=$(echo "${{ env.RELEASES }}" | jq -c -R 'split(" ") | map(select(. != ""))')
           echo "releases=${JSON_RELEASES}" >> $GITHUB_OUTPUT
           echo "--- Release Matrix Generated ---"
           echo "Matrix: ${JSON_RELEASES}"
@@ -421,12 +421,12 @@ jobs:
           for codename in $RELEASES; do
             echo "Generating config for $codename with components:${COMPONENTS}"
             cat <<EOF >> repo/conf/distributions
-          Origin: Armbian Builds
+          Origin: Armbian
           Label: Armbian
           Codename: ${codename}
           Architectures: arm64
           Components: ${COMPONENTS}
-          Description: Custom APT repository for my Armbian builds
+          Description: Custom APT repository for Armbian
           SignWith: ${{ env.GPG_KEY_ID }}
 
           EOF

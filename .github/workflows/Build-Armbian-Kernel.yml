@@ -86,7 +86,8 @@ jobs:
           echo "Docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}"
           echo "RootFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}"
           echo "Extensions: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}"
-
+          
+      # <-- ADDED: Get version from the build repo once.
       - name: "Checkout OS Source to get Version"
         uses: actions/checkout@v4
         with:
@@ -149,10 +150,13 @@ jobs:
       - name: "Setup Kernel Build Environment"
         shell: bash
         run: |
+          # Clean up the runner to free up disk space and prevent conflicts.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
           sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
+          
+          # Prepare custom build files.
           mkdir -p ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
@@ -162,7 +166,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
-            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \ 
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="bookworm" \
@@ -185,6 +189,7 @@ jobs:
       - name: "Record Matrix Info"
         shell: bash
         run: |
+          # Create a marker file to track which board/branch combinations succeeded.
           echo "${{ matrix.BOARD }},${{ matrix.BRANCH }}" > matrix-info.txt
 
       - name: "Upload Matrix Info Artifact"
@@ -240,7 +245,7 @@ jobs:
       - name: "Setup Image Build Environment"
         shell: bash
         run: |
-          # Update and clean the runner environment
+          # Clean up the runner.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
@@ -277,7 +282,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
-            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \ 
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
@@ -322,15 +327,14 @@ jobs:
       - name: "Rename Kernel DEBs for Release"
         shell: bash
         run: |
+          # Simplify kernel .deb filenames for a cleaner release page.
           set -eo pipefail
           echo "--- Simplifying linux-*.deb filenames for release ---"
-          
           find artifacts/kernel-debs-*/ -type f -name 'linux-*.deb' | while read -r filepath; do
             dir=$(dirname "$filepath"); old_name=$(basename "$filepath")
             new_name=$(echo "$old_name" | sed -E 's/^(.*__[0-9.]+).*\.deb$/\1.deb/')
             if [[ "$old_name" != "$new_name" ]]; then mv -v "$filepath" "$dir/$new_name"; fi
           done
-          
           echo "--- Final list of kernel packages after simplification ---"
           ls -R artifacts/kernel-debs-*/
           
@@ -389,7 +393,7 @@ jobs:
     needs: [Publish_Release]
     if: success()
     env:
-      # Expose the GPG Key ID to the job's environment for use in the script
+      # Expose GPG Key ID for the reprepro script.
       GPG_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
 
     steps:
@@ -411,10 +415,10 @@ jobs:
       - name: "Setup APT Repository Structure"
         shell: bash
         run: |
+          # Dynamically create the 'distributions' config for reprepro.
           mkdir -p repo/conf
           > repo/conf/distributions
-
-          COMPONENTS="main" # A general 'main' component can be kept if needed
+          COMPONENTS="main"
           for dir in artifacts/debs/kernel-debs-*/; do
             variant=$(basename "$dir" | sed 's/kernel-debs-//')
             COMPONENTS="${COMPONENTS} ${variant}"
@@ -423,12 +427,12 @@ jobs:
           for codename in $RELEASES; do
             echo "Generating config for $codename with components:${COMPONENTS}"
             cat <<EOF >> repo/conf/distributions
-          Origin: Armbian Builds
+          Origin: Armbian
           Label: Armbian
           Codename: ${codename}
           Architectures: arm64
           Components: ${COMPONENTS}
-          Description: Custom APT repository for my Armbian builds
+          Description: Custom APT repository for Armbian
           SignWith: ${{ env.GPG_KEY_ID }}
 
           EOF
@@ -439,11 +443,10 @@ jobs:
       - name: "Add all DEB packages to each distribution"
         shell: bash
         run: |
+          # Use reprepro to add all built .deb packages to the repository.
           for deb_dir in artifacts/debs/kernel-debs-*/; do
             component=$(basename "$deb_dir" | sed 's/kernel-debs-//')
-            
             echo "--- Processing packages from ${deb_dir} for component: ${component} ---"
-
             for codename in $RELEASES; do
               echo "Adding packages to distribution '${codename}' component '${component}'"
               reprepro -b repo/ -V --ignore=wrongdistribution -C ${component} includedeb ${codename} ${deb_dir}/*.deb
