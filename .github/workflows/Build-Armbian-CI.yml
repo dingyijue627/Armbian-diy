@@ -159,7 +159,6 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
-            REVISION="${{ needs.Prepare_Build.outputs.version }}" \ 
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="bookworm" \
@@ -276,7 +275,6 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
-            REVISION="${{ needs.Prepare_Build.outputs.version }}" \ 
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
