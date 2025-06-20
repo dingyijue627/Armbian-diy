@@ -144,13 +144,13 @@ jobs:
       - name: "Setup Kernel Build Environment"
         shell: bash
         run: |
-          # Clean up the runner to free up disk space and prevent conflicts.
+          # Aggressively clean up the runner to free up disk space for the build.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
           sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
           
-          # Prepare custom build files.
+          # Prepare custom build files by copying them into the build system directory.
           mkdir -p ./build/userpatches
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
@@ -159,6 +159,7 @@ jobs:
         shell: bash
         run: |
           cd ./build
+          # Invoke the Armbian compile script with parameters for a kernel-only build.
           ./compile.sh \
             REVISION="${{ needs.Prepare_Build.outputs.VERSION }}" \
             BOARD="${{ matrix.BOARD }}" \
@@ -228,12 +229,12 @@ jobs:
       - name: "Setup Image Build Environment"
         shell: bash
         run: |
-          # Clean up the runner.
+          # Clean up the runner to ensure sufficient disk space.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
           
-          # Set build flags based on the DESKTOP type from the matrix.
+          # Set build flags as environment variables based on the DESKTOP type.
           if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
@@ -248,7 +249,7 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
 
-          # Prepare build environment with userpatches and pre-built kernel debs.
+          # Prepare build environment with userpatches and the pre-built kernel debs.
           mkdir -p ./build/userpatches ./build/output/debs
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
@@ -282,12 +283,12 @@ jobs:
             ROOTFS_TYPE="${{ needs.Prepare_Build.outputs.ROOTFS }}" \
             EXPERT="yes" \
             VENDOR=Armbian \
-            COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+            COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
 
       - name: "Upload Image Artifact"
         uses: actions/upload-artifact@v4
         with:
-          # Use a unique artifact name for each matrix combination.
+          # A unique artifact name for each image, fully specified by the matrix.
           name: armbian-image-${{ matrix.BOARD }}-${{ matrix.BRANCH }}-${{ matrix.RELEASE }}-${{ matrix.DESKTOP }}
           path: build/output/images/*
           if-no-files-found: error
@@ -340,13 +341,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
         run: |
-
-          # Dynamically generate release notes based on successfully built artifacts.
+        
+          # 1. Gather info from the marker files of all successful builds in THIS run.
           NEW_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
           NEW_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
           NEW_RELEASES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f3 | sort -u | paste -sd ', ' -)
           NEW_DESKTOPS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f4 | sort -u | paste -sd ', ' -)
 
+          # 2. Try to fetch the body of an existing release for this version tag.
           OLD_BODY=""
           if gh release view "${VERSION}" --json body --jq '.body' > old_body.md; then
             echo "--- Found existing release, fetching old body ---"
@@ -355,15 +357,18 @@ jobs:
             echo "--- No existing release found, will create a new one ---"
           fi
 
+          # 3. Parse the OLD body to get previously listed items.
           OLD_BOARDS=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Board\*\*:\s*\K.*' || echo "")
           OLD_BRANCHES=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Kernel\*\*:\s*\K.*' || echo "")
           OLD_RELEASES=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Releases\*\*:\s*\K.*' || echo "")
           OLD_DESKTOPS=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Desktop\*\*:\s*\K.*' || echo "")
 
+          # 4. A helper function to merge old and new comma-separated lists, then sort uniquely.
           function merge_and_sort {
             echo "$1" "$2" | tr ',' '\n' | tr -d ' ' | grep . | sort -u | paste -sd ', ' -
           }
 
+          # 5. Merge old and new info to create the final, cumulative list.
           BUILT_BOARDS=$(merge_and_sort "${NEW_BOARDS}" "${OLD_BOARDS}")
           BUILT_BRANCHES=$(merge_and_sort "${NEW_BRANCHES}" "${OLD_BRANCHES}")
           BUILT_RELEASES=$(merge_and_sort "${NEW_RELEASES}" "${OLD_RELEASES}")
@@ -376,6 +381,7 @@ jobs:
           echo "Desktop: ${BUILT_DESKTOPS}"
           echo "-------------------------"
 
+          # 6. Generate the final HTML body for the release.
           echo "
             <p align='center'>
             <a href='https://www.armbian.com'>
@@ -424,7 +430,7 @@ jobs:
     needs: [Publish_Release]
     if: success()
     env:
-      # Expose GPG Key ID for the reprepro script.
+      # Expose GPG Key ID for the reprepro script to use for signing.
       GPG_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
 
     steps:
@@ -446,9 +452,11 @@ jobs:
       - name: "Setup APT Repository Structure"
         shell: bash
         run: |
-          # Dynamically create the 'distributions' config for reprepro.
+          # Dynamically create the 'distributions' config file for reprepro.
           mkdir -p repo/conf
           > repo/conf/distributions
+          
+          # The repo components are derived from the kernel artifact names (e.g., lemonpi-edge).
           COMPONENTS="main"
           for dir in artifacts/debs/kernel-debs-*/; do
             variant=$(basename "$dir" | sed 's/kernel-debs-//')
