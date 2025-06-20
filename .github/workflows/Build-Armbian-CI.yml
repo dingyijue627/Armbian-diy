@@ -69,7 +69,7 @@ jobs:
       docker: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}
       rootfs: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}
       release_matrix: ${{ steps.set_matrix.outputs.releases }}
-      version: ${{ steps.get_version.outputs.version }} 
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: "Log effective parameters"
         run: |
@@ -159,6 +159,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="bookworm" \
@@ -275,6 +276,7 @@ jobs:
         run: |
           cd ./build
           ./compile.sh \
+            REVISION="${{ needs.Prepare_Build.outputs.version }}" \
             BOARD="${{ matrix.BOARD }}" \
             BRANCH="${{ matrix.BRANCH }}" \
             RELEASE="${{ matrix.RELEASE }}" \
