@@ -270,7 +270,7 @@
 		compatible = "pwm-fan";
 		#cooling-cells = <2>;
 		pwms = <&pwm4 0 50000 0>;
-		cooling-levels = <0 25 100 150 255>;
+		cooling-levels = <0 40 100 150 255>;
 	};
 };
 
@@ -564,18 +564,11 @@
 	};
 };
 
+/* SPI Flash Controller (SFC) configuration */
 &sfc {
 	status = "disabled"; 
 	pinctrl-names = "default";
 	pinctrl-0 = <&fspim0_pins>;
-
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0x0>;
-		spi-max-frequency = <100000000>;
-		spi-rx-bus-width = <4>; 
-		spi-tx-bus-width = <1>;
-	};
 };
 
 /* SPI2 bus for PMIC */

@@ -408,7 +408,8 @@ jobs:
             </p>" > body.html
 
       - name: "Publish to GitHub Release"
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@main
+        if: success()
         with:
           tag: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
           name: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
@@ -416,10 +417,10 @@ jobs:
             artifacts/armbian-image*/**/*
             artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
+          removeArtifacts: false
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
           bodyFile: "body.html"
-          makeLatest: true
 
   # ====================================================================
   # JOB 4: Update APT Repository
