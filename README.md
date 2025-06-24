@@ -1,6 +1,6 @@
 # Armbian-Actions: 自动化 Armbian 构建平台
 
-[![Build Status](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Kernel.yml/badge.svg)](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Kernel.yml)
+[![Build Status](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Nightly.yml/badge.svg)](https://github.com/YANXIAOXIH/Armbian-Actions/actions/workflows/Build-Armbian-Nightly.yml)
 
 ### 📝 项目概述
 
@@ -38,7 +38,7 @@
 -   `GPG_SIGNING_KEY_ID`: 您的 GPG 密钥 ID (长ID)。
 
 ##### 定制构建目标
--   打开 `.github/workflows/Build-Armbian-Kernel.yml` 文件。
+-   打开 `.github/workflows/Build-Armbian-CI.yml` 文件。
 -   **修改开发板**: 在 `Build_Kernel` Job 的 `strategy.matrix` 下，找到 `BOARD` 列表，将其中的内容替换为您想构建的开发板型号。
   ```yaml
   # 示例:

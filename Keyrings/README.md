@@ -11,7 +11,7 @@
 请在您的 Armbian 设备终端中执行以下命令，它将下载并安装 GPG 密钥。
 
 ```bash
-sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/Armbian-Actions/main/Keyrings/armbian-actions.gpg" -o /usr/share/keyrings/armbian-actions.gpg
+sudo curl -fsSL "https://raw.githubusercontent.com/yanxiaoxih/Armbian-Actions/main/Keyrings/armbian-actions.gpg" -o /usr/share/keyrings/armbian-actions.gpg
 ```
 
 ### 第二步：选择您的设备并添加软件源
@@ -26,7 +26,7 @@ sudo curl -fsSL "https://raw.githubusercontent.com/YANXIAOXIH/Armbian-Actions/ma
 ```bash
 cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
 Types: deb
-URIs: https://YANXIAOXIH.github.io/Armbian-Actions/
+URIs: https://yanxiaoxih.github.io/Armbian-Actions/
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: main lemonpi-edge
 Architectures: $(dpkg --print-architecture)
@@ -42,7 +42,7 @@ EOF
 ```bash
 cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
 Types: deb
-URIs: https://YANXIAOXIH.github.io/Armbian-Actions/
+URIs: https://yanxiaoxih.github.io/Armbian-Actions/
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: main lemonpi-vendor
 Architectures: $(dpkg --print-architecture)
@@ -58,7 +58,7 @@ EOF
 ```bash
 cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
 Types: deb
-URIs: https://YANXIAOXIH.github.io/Armbian-Actions/
+URIs: https://yanxiaoxih.github.io/Armbian-Actions/
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: main som3588-cat-edge
 Architectures: $(dpkg --print-architecture)
@@ -74,7 +74,7 @@ EOF
 ```bash
 cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
 Types: deb
-URIs: https://YANXIAOXIH.github.io/Armbian-Actions/
+URIs: https://yanxiaoxih.github.io/Armbian-Actions/
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: main som3588-cat-vendor
 Architectures: $(dpkg --print-architecture)
@@ -92,7 +92,7 @@ EOF
     ```bash
     sudo apt update
     ```
-    您应该能在输出中看到一条指向 `https://YANXIAOXIH.github.io/Armbian-Actions/` 的信息。
+    您应该能在输出中看到一条指向 `https://yanxiaoxih.github.io/Armbian-Actions/` 的信息。
 
 2.  **执行系统升级：**
     ```bash

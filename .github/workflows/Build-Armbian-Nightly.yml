@@ -1,10 +1,13 @@
 name: "Armbian Build Nightly"
 on:
+  schedule:
+    - cron: '30 2 * * 5'
+    
   workflow_dispatch:
     inputs:
       DESKTOP:
         type: choice
-        description: "Desktop environment selection"
+        description: "Desktop environment"
         options:
         - minimal
         - server
@@ -32,8 +35,8 @@ on:
         options: [ 'yes', 'no' ]
         default: 'no'
       
-      nightly:
-        description: "Build type: yes = nightly, no = stable"
+      NIGHTLY:
+        description: "Build type: yes = Nightly, no = Stable"
         required: false
         options: [ 'yes', 'no' ]
         type: choice
@@ -41,160 +44,347 @@ on:
 
       ROOTFS:
         type: choice
-        description: "Root filesystem type"
+        description: "Root filesystem"
         options:
         - ext4
         - btrfs
         default: 'ext4'
-          
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 env:
-  TZ: Asia/Shanghai
+  RELEASE: "oracular plucky noble bookworm trixie"
 
 jobs:
-  Armbian:  
-    runs-on: ubuntu-22.04  
+  # ====================================================================
+  # JOB 0: Prepare Build Parameters and Matrix 
+  # ====================================================================
+  Prepare_Build:
+    name: "Prepare Build Parameters & Matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      DESKTOP: ${{ github.event_name == 'schedule' && '["minimal", "server"]' || format('["{0}"]', inputs.DESKTOP) }}
+      DESKTOP_DISPLAY: ${{ github.event_name == 'schedule' && 'minimal, server' || inputs.DESKTOP }}
+      ENABLE_EXTENSIONS: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}
+      NIGHTLY: ${{ github.event_name == 'schedule' && 'no' || inputs.NIGHTLY }}
+      DOCKER: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}
+      ROOTFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}
+      RELEASE: ${{ steps.set_matrix.outputs.RELEASE }}
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    steps:
+      - name: "Log effective parameters"
+        run: |
+          echo "--- Build Parameters ---"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Desktop: ${{ github.event_name == 'schedule' && '[\"minimal\", \"server\"]' || format('[\"{0}\"]', inputs.DESKTOP) }}"
+          echo "NIGHTLY: ${{ github.event_name == 'schedule' && 'no' || inputs.NIGHTLY }}"
+          echo "DOCKER: ${{ github.event_name == 'schedule' && 'no' || inputs.DOCKER }}"
+          echo "ROOTFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}"
+          echo "ENABLE_EXTENSIONS: ${{ github.event_name == 'schedule' && ' ' || inputs.ENABLE_EXTENSIONS }}"
+          
+      # <-- ADDED: Get version from the build repo once.
+      - name: "Checkout OS Source to get Version"
+        uses: actions/checkout@v4
+        with:
+          repository: armbian/os
+          path: os
+
+      - name: "Get Armbian Version"
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' os/nightly.json)
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Armbian version for this run: ${VERSION}"
+      
+      - name: "Set and Log Release Matrix"
+        id: set_matrix
+        run: |
+          JSON_RELEASE=$(echo "${{ env.RELEASE }}" | jq -c -R 'split(" ") | map(select(. != ""))')
+          echo "RELEASE=${JSON_RELEASE}" >> $GITHUB_OUTPUT
+          echo "--- Release Matrix Generated ---"
+          echo "Matrix: ${JSON_RELEASE}"
+
+  # ====================================================================
+  # JOB 1: Build Kernel Packages
+  # ====================================================================
+  Build_Kernel:
+    needs: Prepare_Build
+    name: "Build Kernel [${{ matrix.BOARD }} ${{ matrix.BRANCH }}]"
+    runs-on: ubuntu-22.04
+    timeout-minutes: 150
     strategy:
+      fail-fast: false
       matrix:
         BOARD: [lemonpi, som3588-cat]
         BRANCH: [edge, vendor]
-        RELEASE: [plucky, oracular, noble, trixie, bookworm]
 
     steps:
       - name: "Checkout Board Source"
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           clean: false
           path: custom
-          
+
       - name: "Checkout Build System"
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           repository: armbian/build
           clean: false
           ref: main
           path: build
-          
-      - name: "Checkout OS Source"
-        uses: actions/checkout@main
+
+      - name: "Checkout OS Source" 
+        uses: actions/checkout@v4
         with:
           repository: armbian/os
           fetch-depth: 0
           clean: false
           path: os
-    
-      - name: "Set Build Environment"
+
+      - name: "Setup Kernel Build Environment"
         shell: bash
         run: |
-          # update
+          # Aggressively clean up the runner to free up disk space for the build.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo -E  apt-get autoclean
-          sudo -E apt-get clean
-          sudo -E  apt-get autoremove
-
-          ## Remove residual config packages
-          dpkg --list | grep "^rc"
-          dpkg --list | grep "^rc" | cut -d " " -f 3
-          dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs sudo dpkg --purge
+          sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
           
-          ## Set userspace decode options based on desktop selection
-          if [[ "${{ inputs.DESKTOP }}" == "minimal" ]]; then
+          # Prepare custom build files by copying them into the build system directory.
+          mkdir -p ./build/userpatches
+          cp -rf ./custom/Addboard/* ./build
+          cp -rf ./os/userpatches/* ./build/userpatches
+
+      - name: "Compile Kernel [${{ matrix.BOARD }} ${{ matrix.BRANCH }}]"
+        shell: bash
+        run: |
+          cd ./build
+          # Invoke the Armbian compile script with parameters for a kernel-only build.
+          ./compile.sh \
+            REVISION="${{ needs.Prepare_Build.outputs.VERSION }}" \
+            BOARD="${{ matrix.BOARD }}" \
+            BRANCH="${{ matrix.BRANCH }}" \
+            RELEASE="bookworm" \
+            KERNEL_CONFIGURE="no" \
+            BUILD_DESKTOP="no" \
+            BUILD_MINIMAL="yes" \
+            SHARE_LOG="yes" \
+            BETA="${{ needs.Prepare_Build.outputs.NIGHTLY }}" \
+            PREFER_DOCKER="${{ needs.Prepare_Build.outputs.DOCKER }}" \
+            EXPERT="yes" \
+            VENDOR=Armbian
+
+      - name: "Upload Kernel Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-debs-${{ matrix.BOARD }}-${{ matrix.BRANCH }}
+          path: build/output/debs/*.deb
+          if-no-files-found: error
+
+  # ====================================================================
+  # JOB 2: Build Armbian Image
+  # ====================================================================
+  Build_Image:
+    name: "Build Image [${{ matrix.BOARD }} ${{ matrix.BRANCH }} ${{ matrix.RELEASE }} ${{ matrix.DESKTOP }}]"
+    needs: [Prepare_Build, Build_Kernel]
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        BOARD: [ lemonpi, som3588-cat ]
+        BRANCH: [ edge, vendor ]
+        RELEASE: ${{ fromJson(needs.Prepare_Build.outputs.RELEASE) }}
+        DESKTOP: ${{ fromJson(needs.Prepare_Build.outputs.DESKTOP) }}
+        
+    steps:
+      - name: "Checkout Board Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          clean: false
+          path: custom
+
+      - name: "Checkout Build System"
+        uses: actions/checkout@v4
+        with:
+          repository: armbian/build
+          clean: false
+          ref: main
+          path: build
+
+      - name: "Checkout OS Source"
+        uses: actions/checkout@v4
+        with:
+          repository: armbian/os
+          fetch-depth: 0
+          clean: false
+          path: os
+
+      - name: "Download Kernel Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-debs-${{ matrix.BOARD }}-${{ matrix.BRANCH }}
+          path: ./prebuilt-kernel-debs
+
+      - name: "Setup Image Build Environment"
+        shell: bash
+        run: |
+          # Clean up the runner to ensure sufficient disk space.
+          sudo apt-get update
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          
+          # Set build flags as environment variables based on the DESKTOP type.
+          if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="yes"" >> $GITHUB_ENV
-          elif [[ "${{ inputs.DESKTOP }}" == "server" ]]; then
+          elif [[ "${{ matrix.DESKTOP }}" == "server" ]]; then
             echo "BUILD_DESKTOP="no"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
           else
             echo "BUILD_DESKTOP="yes"" >> $GITHUB_ENV
             echo "BUILD_MINIMAL="no"" >> $GITHUB_ENV
-            echo "DESKTOP_ENVIRONMENT="${{ inputs.DESKTOP }}"" >> $GITHUB_ENV
+            echo "DESKTOP_ENVIRONMENT="${{ matrix.DESKTOP }}"" >> $GITHUB_ENV
             echo "DESKTOP_APPGROUPS_SELECTED="browsers"" >> $GITHUB_ENV
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
-          
-          ## Set build version and date from upstream Armbian OS
-          echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
-          echo "VERSIONOS=$(cat build/VERSION)" >> $GITHUB_ENV
-          
-          ## Set version override if provided
-          cat "os/nightly.json" | jq '.version' | sed "s/\"//g" | sed 's/^/ARMBIAN_VERSION=/' >> $GITHUB_ENV
-          [[ "${{ inputs.armbian_version }}" != '' ]] && echo "ARMBIAN_VERSION=${{ inputs.armbian_version }}" >> $GITHUB_ENV
-         
-          ## Copy user patches and board files into build directory
-          mkdir -p  ./build/userpatches
+
+          # Prepare build environment with userpatches and the pre-built kernel debs.
+          mkdir -p ./build/userpatches ./build/output/debs
           cp -rf ./custom/Addboard/* ./build
           cp -rf ./os/userpatches/* ./build/userpatches
-
-          ## Insert CNflysky kernel configuration into rockchip-rk3588 family config
-          ##sed -i '41r ./build/config/sources/families/CNflysky.txt' ./build/config/sources/families/rockchip-rk3588.conf
+          cp -v ./prebuilt-kernel-debs/*.deb ./build/output/debs/
           
-          ## Add board maintainer to CODEOWNERS file
-          sed -i '75i config/boards/${{ inputs.BOARD }}.conf		@YANXIAOXIH' ./build/.github/CODEOWNERS
+      - name: "Import GPG Key for Signing Images"
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: "Compile Armbian Image  [ ${{ matrix.BOARD }} ${{ matrix.RELEASE }} ]"
+      - name: "Compile Image [${{ matrix.BOARD }} ${{ matrix.RELEASE }}]"
         shell: bash
         run: |
-          ## Enter build directory
           cd ./build
-          ## Run Armbian build script with selected options
           ./compile.sh \
-          REVISION="${{ env.ARMBIAN_VERSION }}" \
-          BOARD="${{ matrix.BOARD }}" \
-          BRANCH="${{ matrix.BRANCH }}" \
-          RELEASE="${{ matrix.RELEASE }}" \
-          KERNEL_CONFIGURE="no" \
-          BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
-          BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
-          DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
-          DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
-          DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
-          ENABLE_EXTENSIONS="${{ inputs.ENABLE_EXTENSIONS || ' '  }}" \
-          BOARD_FIRMWARE_INSTALL="-full" \
-          SHARE_LOG="yes" \
-          BETA="${{ inputs.nightly }}" \
-          PREFER_DOCKER="${{ inputs.DOCKER }}" \
-          ROOTFS_TYPE="${{ inputs.ROOTFS }}" \
-          EXPERT="yes" \
-          VENDOR=Armbian \
-          IMAGE_XZ_COMPRESSION_RATIO=8 \
-          COMPRESS_OUTPUTIMAGE=sha,gpg,xz
+            REVISION="${{ needs.Prepare_Build.outputs.VERSION }}" \
+            BOARD="${{ matrix.BOARD }}" \
+            BRANCH="${{ matrix.BRANCH }}" \
+            RELEASE="${{ matrix.RELEASE }}" \
+            KERNEL_CONFIGURE="no" \
+            kernel="no" \
+            BUILD_DESKTOP="${{ env.BUILD_DESKTOP }}" \
+            BUILD_MINIMAL="${{ env.BUILD_MINIMAL }}" \
+            DESKTOP_ENVIRONMENT="${{ env.DESKTOP_ENVIRONMENT }}" \
+            DESKTOP_APPGROUPS_SELECTED="${{ env.DESKTOP_APPGROUPS_SELECTED }}" \
+            DESKTOP_ENVIRONMENT_CONFIG_NAME="${{ env.DESKTOP_ENVIRONMENT_CONFIG_NAME }}" \
+            ENABLE_EXTENSIONS="${{ needs.Prepare_Build.outputs.ENABLE_EXTENSIONS }}" \
+            SHARE_LOG="yes" \
+            BETA="${{ needs.Prepare_Build.outputs.NIGHTLY }}" \
+            PREFER_DOCKER="${{ needs.Prepare_Build.outputs.DOCKER }}" \
+            ROOTFS_TYPE="${{ needs.Prepare_Build.outputs.ROOTFS }}" \
+            EXPERT="yes" \
+            VENDOR=Armbian \
+            COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
 
-      - name: "Generate GitHub Release Body"
-        if: success()
+      - name: "Upload Image Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          # A unique artifact name for each image, fully specified by the matrix.
+          name: armbian-image-${{ matrix.BOARD }}-${{ matrix.BRANCH }}-${{ matrix.RELEASE }}-${{ matrix.DESKTOP }}
+          path: build/output/images/*
+          if-no-files-found: error
+          
+      - name: "Record Successful Image Build Info"
+        shell: bash
         run: |
-            # Generate HTML body for GitHub Release
-            echo "
-              <p align='center'>
-              <a href='https://www.armbian.com'>
-              <img src='https://raw.githubusercontent.com/armbian/.github/master/profile/tux-two.png' width='400'></a></p>
-              <h1 align=center>Armbian OS</h1>
-              <p align=center>
-              <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
-              <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
-              </p>
-              <br>
+          # Create a marker file to track which board/branch combinations succeeded.
+          echo "${{ matrix.BOARD }},${{ matrix.BRANCH }},${{ matrix.RELEASE }},${{ matrix.DESKTOP }}" > matrix-info.txt
 
-              - Board: ${{ matrix.BOARD }} 
-              - Kernel: vendor edge 
-              - Redroid: Vendor 
-              - Verification: sha256sum 
+      - name: "Upload Matrix Info Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-info-${{ matrix.BOARD }}-${{ matrix.BRANCH }}-${{ matrix.RELEASE }}-${{ matrix.DESKTOP }}
+          path: matrix-info.txt
 
-              Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
+  # ====================================================================
+  # JOB 3: Publish GitHub Release
+  # ====================================================================
+  Publish_Release:
+    name: "Publish GitHub Release"
+    runs-on: ubuntu-latest
+    needs: [Prepare_Build, Build_Image]
+    if: success()
 
-              <br>
-              &nbsp;
-              </p>" > body.html
+    steps:
+      - name: "Download All Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
 
-      - name: "Upload Armbian Image to GitHub Release"
+      - name: "Rename Kernel DEBs for Release"
+        shell: bash
+        run: |
+          # Simplify kernel .deb filenames for a cleaner release page.
+          set -eo pipefail
+          echo "--- Simplifying linux-*.deb filenames for release ---"
+          find artifacts/kernel-debs-*/ -type f -name 'linux-*.deb' | while read -r filepath; do
+            dir=$(dirname "$filepath"); old_name=$(basename "$filepath")
+            new_name=$(echo "$old_name" | sed -E 's/^(.*__[0-9.]+).*\.deb$/\1.deb/')
+            if [[ "$old_name" != "$new_name" ]]; then mv -v "$filepath" "$dir/$new_name"; fi
+          done
+          echo "--- Final list of kernel packages after simplification ---"
+          ls -R artifacts/kernel-debs-*/
+          
+      - name: "Generate Release Body"
+        id: generate_body
+        shell: bash
+        run: |
+          # This clever logic finds all the unique boards and branches that were successfully built
+          BUILT_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
+          BUILT_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
+          BUILT_RELEASES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f3 | sort -u | paste -sd ', ' -)
+          BUILT_DESKTOPS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f4 | sort -u | paste -sd ', ' -)      
+          echo "
+            <p align='center'>
+            <a href='https://www.armbian.com'>
+            <img src='https://raw.githubusercontent.com/armbian/.github/master/profile/tux-two.png' width='400'></a></p>
+            <h1 align=center>Armbian OS</h1>
+            <p align=center>
+            <a href='https://www.armbian.com'><img alt='Armbian Linux stable' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20current&query=CURRENT&color=f71000&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+            <a href='https://www.armbian.com'><img alt='Armbian Linux rolling' src='https://img.shields.io/badge/dynamic/json?label=Armbian%20Linux%20edge&query=EDGE&color=34be5b&cacheSeconds=600&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2Farmbian%2Fscripts%2Freleases%2Fdownload%2Fstatus%2Frunners_capacity.json'></a>
+            </p>
+            <br>
+
+            - **Board**: ${BUILT_BOARDS}
+            - **Kernel**: ${BUILT_BRANCHES}
+            - **Desktop**: ${BUILT_DESKTOPS} 
+            - **Releases**: ${BUILT_RELEASES}
+            - **Build Type**: ${{ needs.Prepare_Build.outputs.NIGHTLY == 'yes' && 'Nightly' || 'Stable' }}
+            - **Verification**: sha256sum and GPG signature
+
+            <br>
+            Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
+
+            <br>
+             
+            </p>" > body.html
+
+      - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@main
         if: success()
         with:
-          tag: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          name: "Armbian_V${{ env.ARMBIAN_VERSION }}"
-          artifacts: "build/output/images/*"
+          tag: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
+          name: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
+          artifacts: |
+            artifacts/armbian-image*/**/*
+            artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
           removeArtifacts: false
           replacesArtifacts: true
