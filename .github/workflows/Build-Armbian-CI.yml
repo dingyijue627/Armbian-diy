@@ -441,6 +441,15 @@ jobs:
           pattern: kernel-debs-*
           path: artifacts/debs
 
+      - name: "Download MonitorPanel DEB fpackages"
+        uses: dsaltares/fetch-gh-release-asset@1.1.0
+        continue-on-error: true
+        with:
+          repo: 'YANXIAOXIH/MonitorPanel'
+          version: 'latest'    
+          file: 'monitorpanel-.*_arm64.deb'
+          target: 'artifacts/debs/monitorpanel/monitorpanel.deb' 
+
       - name: "Import GPG Key"
         uses: crazy-max/ghaction-import-gpg@v6
         with:
@@ -496,6 +505,25 @@ jobs:
               fi
             done
           done
+
+      - name: "Add MonitorPanel DEB package to 'main' component"
+        shell: bash
+        run: |
+          MONITOR_DEB_FILE="artifacts/debs/monitorpanel/monitorpanel.deb"
+
+          if [ -s "$MONITOR_DEB_FILE" ]; then
+            echo "--- Processing MonitorPanel package ---"
+            for codename in $RELEASE; do
+              echo "Adding MonitorPanel to distribution '${codename}' component 'main'"
+              reprepro -b repo/ -V -C main includedeb ${codename} "$MONITOR_DEB_FILE"
+              if [ $? -ne 0 ]; then
+                  echo "::error::reprepro failed for ${codename}/main with MonitorPanel package"
+                  exit 1
+              fi
+            done
+          else
+            echo "::warning::MonitorPanel DEB package not found or empty, skipping."
+          fi
 
       - name: "Deploy repository to GitHub Pages"
         uses: peaceiris/actions-gh-pages@v4
