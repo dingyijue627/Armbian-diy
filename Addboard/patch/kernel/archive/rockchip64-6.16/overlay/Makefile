@@ -5,6 +5,7 @@ dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3308-b@1.3ghz.dtbo \
 	rk3308-bs.dtbo rk3308-bs@1.3ghz.dtbo \
 	rk3308-emmc.dtbo \
+	rk3308-pcm5102a.dtbo \
 	rk3308-sdio@10mhz.dtbo rk3308-sdio@4mhz.dtbo \
 	rockchip-sakurapi-rk3308b-ws2812.dtbo \
 	rockchip-rockpi4cplus-usb-host.dtbo \
@@ -108,4 +109,3 @@ dtbotxt-$(CONFIG_ARCH_ROCKCHIP) += \
 dtb-y += $(dtbo-y) $(scr-y) $(dtbotxt-y)
 
 clean-files    := *.dtbo *.scr
-

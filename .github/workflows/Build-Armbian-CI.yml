@@ -110,7 +110,7 @@ jobs:
     needs: Prepare_Build
     name: "Build Kernel [${{ matrix.BOARD }} ${{ matrix.BRANCH }}]"
     runs-on: ubuntu-22.04
-    timeout-minutes: 150
+    timeout-minutes: 200
     strategy:
       fail-fast: false
       matrix:
@@ -312,7 +312,7 @@ jobs:
     name: "Publish GitHub Release"
     runs-on: ubuntu-latest
     needs: [Prepare_Build, Build_Image]
-    if: success()
+    if: always() 
 
     steps:
       - name: "Download All Artifacts"
@@ -365,7 +365,10 @@ jobs:
 
           # 4. A helper function to merge old and new comma-separated lists, then sort uniquely.
           function merge_and_sort {
-            echo "$1" "$2" | tr ',' '\n' | tr -d ' ' | grep . | sort -u | paste -sd ', ' -
+            (
+              echo "$1" | tr ',' '\n'
+              echo "$2" | tr ',' '\n'
+            ) | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep . | sort -u | paste -sd ', ' -
           }
 
           # 5. Merge old and new info to create the final, cumulative list.
