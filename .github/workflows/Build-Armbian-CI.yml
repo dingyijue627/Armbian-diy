@@ -150,15 +150,15 @@ jobs:
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
           sudo dpkg --list | grep "^rc" | cut -d " " -f 3 | xargs -r sudo dpkg --purge || true
 
-          # Automatically sync rockchip64-6.15 patches to all existing rockchip64-6.* directories under build
+          # Automatically sync rockchip64-6.16 patches to all existing rockchip64-6.* directories under build
           for verdir in ./build/patch/kernel/archive/rockchip64-6.*; do
             if [ -d "$verdir" ]; then
               target=$(basename "$verdir")
               if [ ! -d "./build/patch/kernel/archive/$target" ]; then
                 mkdir -p "./build/patch/kernel/archive/$target"
               fi
-              cp -rf ./custom/Addboard/patch/kernel/archive/rockchip64-6.15/* "./build/patch/kernel/archive/$target/"
-              echo "rockchip64-6.15 patches have been synced to $target"
+              cp -rf ./custom/Addboard/patch/kernel/archive/rockchip64-6.16/* "./build/patch/kernel/archive/$target/"
+              echo "rockchip64-6.16 patches have been synced to $target"
             fi
           done
           
@@ -261,15 +261,15 @@ jobs:
             echo "DESKTOP_ENVIRONMENT_CONFIG_NAME="config_base"" >> $GITHUB_ENV
           fi
 
-          # Automatically sync rockchip64-6.15 patches to all existing rockchip64-6.* directories under build
+          # Automatically sync rockchip64-6.16 patches to all existing rockchip64-6.* directories under build
           for verdir in ./build/patch/kernel/archive/rockchip64-6.*; do
             if [ -d "$verdir" ]; then
               target=$(basename "$verdir")
               if [ ! -d "./build/patch/kernel/archive/$target" ]; then
                 mkdir -p "./build/patch/kernel/archive/$target"
               fi
-              cp -rf ./custom/Addboard/patch/kernel/archive/rockchip64-6.15/* "./build/patch/kernel/archive/$target/"
-              echo "rockchip64-6.15 patches have been synced to $target"
+              cp -rf ./custom/Addboard/patch/kernel/archive/rockchip64-6.16/* "./build/patch/kernel/archive/$target/"
+              echo "rockchip64-6.16 patches have been synced to $target"
             fi
           done
           
