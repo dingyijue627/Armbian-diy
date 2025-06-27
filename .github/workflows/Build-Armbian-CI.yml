@@ -365,29 +365,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
         run: |
-        
-          # 1. Gather info from the marker files of all successful builds in THIS run.
+          # 1. Gather info from this run's successful builds.
           NEW_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
           NEW_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
           NEW_RELEASES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f3 | sort -u | paste -sd ', ' -)
           NEW_DESKTOPS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f4 | sort -u | paste -sd ', ' -)
 
-          # 2. Try to fetch the body of an existing release for this version tag.
+          # 2. Try to fetch the old release body.
           OLD_BODY=""
           if gh release view "${VERSION}" --json body --jq '.body' > old_body.md; then
             echo "--- Found existing release, fetching old body ---"
             OLD_BODY=$(cat old_body.md)
           else
-            echo "--- No existing release found, will create a new one ---"
+            echo "--- No existing release found, creating new one ---"
           fi
 
-          # 3. Parse the OLD body to get previously listed items.
-          OLD_BOARDS=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Board\*\*:\s*\K.*' || echo "")
-          OLD_BRANCHES=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Kernel\*\*:\s*\K.*' || echo "")
-          OLD_RELEASES=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Releases\*\*:\s*\K.*' || echo "")
-          OLD_DESKTOPS=$(echo "$OLD_BODY" | grep -oP '^\s*-\s*\*\*Desktop\*\*:\s*\K.*' || echo "")
+          # 3. Parse the OLD body using reliable HTML comment markers.
+          #    This regex now correctly captures everything between the marker and the closing '-->'.
+          OLD_BOARDS=$(echo "$OLD_BODY" | grep -oP '<!-- BOARDS_LIST: \K.*?(?= -->)' || echo "")
+          OLD_BRANCHES=$(echo "$OLD_BODY" | grep -oP '<!-- KERNELS_LIST: \K.*?(?= -->)' || echo "")
+          OLD_RELEASES=$(echo "$OLD_BODY" | grep -oP '<!-- RELEASES_LIST: \K.*?(?= -->)' || echo "")
+          OLD_DESKTOPS=$(echo "$OLD_BODY" | grep -oP '<!-- DESKTOPS_LIST: \K.*?(?= -->)' || echo "")
 
-          # 4. A helper function to merge old and new comma-separated lists, then sort uniquely.
+          # 4. A helper function to merge and sort.
           function merge_and_sort {
             (
               echo "$1" | tr ',' '\n'
@@ -395,7 +395,7 @@ jobs:
             ) | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep . | sort -u | paste -sd ', ' -
           }
 
-          # 5. Merge old and new info to create the final, cumulative list.
+          # 5. Merge old and new info.
           BUILT_BOARDS=$(merge_and_sort "${NEW_BOARDS}" "${OLD_BOARDS}")
           BUILT_BRANCHES=$(merge_and_sort "${NEW_BRANCHES}" "${OLD_BRANCHES}")
           BUILT_RELEASES=$(merge_and_sort "${NEW_RELEASES}" "${OLD_RELEASES}")
@@ -408,8 +408,8 @@ jobs:
           echo "Desktop: ${BUILT_DESKTOPS}"
           echo "-------------------------"
 
-          # 6. Generate the final HTML body for the release.
-          echo "
+          # 6. Generate the final HTML body using a Heredoc to define the template variable.
+          BODY_TEMPLATE=$(cat <<'EOM')
             <p align='center'>
             <a href='https://www.armbian.com'>
             <img src='https://github.com/armbian/build/blob/main/.github/armbian-logo.png?raw=true' width='150'></a></p>
@@ -420,19 +420,37 @@ jobs:
             </p>
             <br>
 
-            - **Board**: ${BUILT_BOARDS}
-            - **Kernel**: ${BUILT_BRANCHES}
-            - **Desktop**: ${BUILT_DESKTOPS} 
-            - **Releases**: ${BUILT_RELEASES}
+            - **Board**: BUILT_BOARDS_PLACEHOLDER
+            - **Kernel**: BUILT_BRANCHES_PLACEHOLDER
+            - **Desktop**: BUILT_DESKTOPS_PLACEHOLDER
+            - **Releases**: BUILT_RELEASES_PLACEHOLDER
             - **Build Type**: ${{ needs.Prepare_Build.outputs.NIGHTLY == 'yes' && 'Nightly' || 'Stable' }}
             - **Verification**: sha256sum and GPG signature
+
+            <!-- BOARDS_LIST: BUILT_BOARDS_PLACEHOLDER -->
+            <!-- KERNELS_LIST: BUILT_BRANCHES_PLACEHOLDER -->
+            <!-- DESKTOPS_LIST: BUILT_DESKTOPS_PLACEHOLDER -->
+            <!-- RELEASES_LIST: BUILT_RELEASES_PLACEHOLDER -->
 
             <br>
             Please note that Armbian Rolling Releases are not recommended for production environments, as these builds are not thoroughly tested. However, in most cases, they should work well. 
 
             <br>
              
-            </p>" > body.html
+            </p>
+          EOM
+
+          # 7. Replace placeholders with actual data. Using a temporary variable for clarity.
+          BODY_CONTENT="${BODY_TEMPLATE}"
+          BODY_CONTENT=$(echo "${BODY_CONTENT}" | sed "s/BUILT_BOARDS_PLACEHOLDER/${BUILT_BOARDS}/g")
+          BODY_CONTENT=$(echo "${BODY_CONTENT}" | sed "s/BUILT_BRANCHES_PLACEHOLDER/${BUILT_BRANCHES}/g")
+          BODY_CONTENT=$(echo "${BODY_CONTENT}" | sed "s/BUILT_DESKTOPS_PLACEHOLDER/${BUILT_DESKTOPS}/g")
+          BODY_CONTENT=$(echo "${BODY_CONTENT}" | sed "s/BUILT_RELEASES_PLACEHOLDER/${BUILT_RELEASES}/g")
+
+          echo "${BODY_CONTENT}" > body.html
+
+          echo "--- Generated body.html ---"
+          cat body.html
 
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@main
