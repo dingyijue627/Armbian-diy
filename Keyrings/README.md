@@ -81,7 +81,21 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /usr/share/keyrings/armbian-actions.gpg
 EOF
 ```
+---
 
+#### 选项 F：为 ufi001c 添加 Edge 镜像内核源
+
+如果您使用的是 `ufi001c` 并希望使用最新的 `edge` 内核：
+```bash
+cat <<EOF | sudo tee /etc/apt/sources.list.d/armbian-actions.sources > /dev/null
+Types: deb
+URIs: https://ghproxy.com/https://raw.githubusercontent.com/YANXIAOXIH/Armbian-Actions/apt-repo/
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: main ufi001c-edge
+Architectures: $(dpkg --print-architecture)
+Signed-By: /usr/share/keyrings/armbian-actions.gpg
+EOF
+```
 ---
 
 ### 第三步：刷新并更新系统
