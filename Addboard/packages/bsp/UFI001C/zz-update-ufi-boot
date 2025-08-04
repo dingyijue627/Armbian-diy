@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# /etc/kernel/postinst.d/99-update-ufi-boot (v2 - Dynamic DTB Loading)
+# This script is automatically triggered after a new kernel is installed.
+# It reads the target DTB from /boot/armbianEnv.txt, generates a new
+# boot.img for UFI001C, and flashes it.
+#
+
+set -e # Exit immediately if a command fails.
+
+# --- Configuration ---
+# The physical boot partition. Double-check this on your device!
+BOOT_PARTITION="/dev/disk/by-partlabel/boot"
+# The environment file that holds our configuration
+ENV_FILE="/boot/armbianEnv.txt"
+
+# dpkg hook passes the new kernel version as the first argument.
+KERNEL_VERSION="$1"
+
+# Exit if no kernel version is passed.
+if [ -z "${KERNEL_VERSION}" ]; then
+    echo "This script is designed to be run by dpkg. No kernel version supplied. Exiting."
+    exit 0
+fi
+
+echo "--- Running UFI001C Dynamic Boot Updater for Kernel ${KERNEL_VERSION} ---"
+
+# --- Main Logic ---
+
+# 1. Source the environment file to get our configuration variables
+if [ -f "${ENV_FILE}" ]; then
+    echo "[1/5] Loading configuration from ${ENV_FILE}..."
+    source "${ENV_FILE}"
+else
+    echo "ERROR: Configuration file ${ENV_FILE} not found. Aborting." >&2
+    exit 1
+fi
+
+# 2. Check if the DTB file variable (fdtfile) was loaded
+if [ -z "$fdtfile" ]; then
+    echo "ERROR: 'fdtfile' variable is not set in ${ENV_FILE}. Aborting." >&2
+    echo "Please add a line like 'fdtfile=qcom/msm8916-thwc-ufi001c-pro.dtb' to it."
+    exit 1
+fi
+
+# 3. Define file paths based on the new kernel version and the loaded config
+echo "[2/5] Locating required files..."
+KERNEL_FILE="/boot/vmlinuz-${KERNEL_VERSION}"
+INITRD_FILE="/boot/initrd.img-${KERNEL_VERSION}"
+# The full path to the DTB is constructed dynamically
+DTB_FILE="/usr/lib/linux-image-${KERNEL_VERSION}/${fdtfile}"
+
+# Check if all required files exist
+if ! [ -f "${KERNEL_FILE}" ] || ! [ -f "${INITRD_FILE}" ] || ! [ -f "${DTB_FILE}" ]; then
+    echo "ERROR: One or more required files for kernel ${KERNEL_VERSION} not found. Aborting." >&2
+    echo "Looked for:"
+    echo " - ${KERNEL_FILE}"
+    echo " - ${INITRD_FILE}"
+    echo " - ${DTB_FILE} (as specified by 'fdtfile' in armbianEnv.txt)"
+    exit 1
+fi
+
+echo "      - Kernel: ${KERNEL_FILE}"
+echo "      - Initrd: ${INITRD_FILE}"
+echo "      - DTB:    ${DTB_FILE} (Dynamically loaded)"
+
+# Create a temporary working directory
+WORK_DIR=$(mktemp -d)
+trap 'rm -rf -- "$WORK_DIR"' EXIT
+
+echo "[3/5] Preparing components in temporary directory..."
+gzip -9 -c "${KERNEL_FILE}" > "${WORK_DIR}/Image.gz"
+cat "${WORK_DIR}/Image.gz" "${DTB_FILE}" > "${WORK_DIR}/kernel-dtb"
+cp "${INITRD_FILE}" "${WORK_DIR}/initrd.img"
+
+# Get the PARTUUID of the root partition dynamically
+ROOT_PARTUUID=a7ab80e8-e9d1-e8cd-f157-93f69b1d141e
+CMDLINE="earlycon root=PARTUUID=${ROOT_PARTUUID} console=ttyMSM0,115200 no_framebuffer=true rw"
+
+echo "[4/5] Building new boot image 'new-boot.img'..."
+mkbootimg \
+    --base 0x80000000 \
+    --kernel_offset 0x00080000 \
+    --ramdisk_offset 0x02000000 \
+    --tags_offset 0x01e00000 \
+    --pagesize 2048 \
+    --second_offset 0x00f00000 \
+    --ramdisk "${WORK_DIR}/initrd.img" \
+    --cmdline "${CMDLINE}" \
+    --kernel "${WORK_DIR}/kernel-dtb" \
+    -o "${WORK_DIR}/new-boot.img"
+
+echo "[5/5] Flashing new boot image to ${BOOT_PARTITION}..."
+dd if="${WORK_DIR}/new-boot.img" of="${BOOT_PARTITION}" bs=4M status=progress
+
+echo "--- SUCCESS! Boot partition automatically updated using DTB: ${fdtfile} ---"
+
+exit 0

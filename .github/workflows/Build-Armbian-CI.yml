@@ -114,7 +114,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [lemonpi, som3588-cat]
+        BOARD: [lemonpi, som3588-cat, ufi001c]
         BRANCH: [edge, vendor]
 
     steps:
@@ -203,7 +203,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [ lemonpi, som3588-cat ]
+        BOARD: [lemonpi, som3588-cat, ufi001c]
         BRANCH: [ edge, vendor ]
         RELEASE: ${{ fromJson(needs.Prepare_Build.outputs.RELEASE) }}
         DESKTOP: ${{ fromJson(needs.Prepare_Build.outputs.DESKTOP) }}
