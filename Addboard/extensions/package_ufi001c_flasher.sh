@@ -163,8 +163,8 @@ LOOP_DEVICE=""
 echo "--> 6. 正在处理镜像并放置到Flasher目录..."
 TARGET_IMAGES_DIR="${PACKAGING_TEMP_DIR}/images"
 if [ ! -d "${TARGET_IMAGES_DIR}" ]; then
-  echo "❌ 错误：在 Flasher 文件中未找到 'images' 子目录。"
-  exit 1
+  echo "⚠️ 警告：在 Flasher 文件中未找到 'images' 子目录，将自动创建。"
+  mkdir -p "${TARGET_IMAGES_DIR}"
 fi
 # 复制boot.img
 echo "    复制 boot.img..."
