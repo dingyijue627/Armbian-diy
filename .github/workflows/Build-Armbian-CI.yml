@@ -310,7 +310,8 @@ jobs:
             VENDOR=Armbian \
             COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
 
-      - name: "Package Uf001c Flasher"
+      - name: "Package UFI001C Flasher"
+        if: matrix.BOARD == 'ufi001c'
         shell: bash
         run: |
           cd ./build
