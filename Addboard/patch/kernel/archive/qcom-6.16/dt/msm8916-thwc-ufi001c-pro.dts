@@ -10,10 +10,10 @@
 
 	fan0: fan0 {
         compatible = "gpio-fan";
-        gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+        gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
         #cooling-cells = <2>;
 		gpio-fan,speed-map = <0 0>,
-		                     <1 100>,
+		                     <1 200>,
 		                     <2 255>; 
     };
 
@@ -21,13 +21,13 @@
 		cpu0-1-thermal {
 			trips {
 				trip_medium_speed_01: trip-point-medium-01 {
-					temperature = <55000>;
+					temperature = <60000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
 
 				trip_full_speed_01: trip-point-full-01 {
-					temperature = <60000>;
+					temperature = <65000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
@@ -48,12 +48,12 @@
 		cpu2-3-thermal {
 			trips {
 				trip_medium_speed_23: trip-point-medium-23 {
-					temperature = <55000>;
+					temperature = <60000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
 				trip_full_speed_23: trip-point-full-23 {
-					temperature = <60000>;
+					temperature = <65000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
@@ -78,18 +78,27 @@
 		pinctrl-0 = <&gpio_leds_default>;
 		pinctrl-names = "default";
 
+		/*
+		 * GPIOs are board-specific.
+		 * Functions and default-states defined here are fallbacks.
+		 * Feel free to override them if your board is different.
+		 */
 		led_r: led-r {
 			color = <LED_COLOR_ID_RED>;
-			function = "disk-activity"; 
-			linux,default-trigger = "mmc0";
 			default-state = "off";
+			function = LED_FUNCTION_POWER;
 		};
-		
+
+		led_g: led-g {
+			color = <LED_COLOR_ID_GREEN>;
+			default-state = "off";
+			function = LED_FUNCTION_WAN;
+		};
+
 		led_b: led-b {
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN;
-			linux,default-trigger = "phy0tx";
 			default-state = "off";
+			function = LED_FUNCTION_WLAN;
 		};
 	};
 
@@ -135,6 +144,10 @@
 	gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
 };
 
+&led_g {
+	gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
+};
+
 &led_r {
 	gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 };
@@ -150,7 +163,7 @@
 };
 
 &gpio_leds_default {
-	pins = "gpio20", "gpio22";
+	pins = "gpio20", "gpio21", "gpio22";
 };
 
 /* This selects the external SIM card slot by default */

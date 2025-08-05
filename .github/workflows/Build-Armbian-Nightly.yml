@@ -348,9 +348,22 @@ jobs:
     if: always() 
 
     steps:
-      - name: "Download All Artifacts"
+      - name: "Download Image Artifacts"
         uses: actions/download-artifact@v4
         with:
+          name: armbian-image-*
+          path: artifacts/
+
+      - name: "Download Kernel Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-debs-*
+          path: artifacts/
+
+      - name: "Download Matrix Info Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: matrix-info-*
           path: artifacts/
 
       - name: "Rename Kernel DEBs for Release"

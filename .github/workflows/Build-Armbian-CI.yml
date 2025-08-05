@@ -244,6 +244,7 @@ jobs:
           # Clean up the runner to ensure sufficient disk space.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -y mkbootimg android-sdk-libsparse-utils
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
           
           # Set build flags as environment variables based on the DESKTOP type.
@@ -309,6 +310,13 @@ jobs:
             VENDOR=Armbian \
             COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
 
+      - name: "Package Uf001c Flasher"
+        shell: bash
+        run: |
+          cd ./build
+          chmod +x ./extensions/package_ufi001c_flasher.sh
+          sudo ./extensions/package_ufi001c_flasher.sh
+
       - name: "Upload Image Artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -339,9 +347,22 @@ jobs:
     if: always() 
 
     steps:
-      - name: "Download All Artifacts"
+      - name: "Download Image Artifacts"
         uses: actions/download-artifact@v4
         with:
+          name: armbian-image-*
+          path: artifacts/
+
+      - name: "Download Kernel Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-debs-*
+          path: artifacts/
+
+      - name: "Download Matrix Info Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: matrix-info-*
           path: artifacts/
 
       - name: "Rename Kernel DEBs for Release"
