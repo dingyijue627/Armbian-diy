@@ -244,8 +244,8 @@ jobs:
           # Clean up the runner to ensure sufficient disk space.
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
-          sudo -E apt-get -y mkbootimg android-sdk-libsparse-utils
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          sudo apt-get install -y mkbootimg android-sdk-libsparse-utils
           
           # Set build flags as environment variables based on the DESKTOP type.
           if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
