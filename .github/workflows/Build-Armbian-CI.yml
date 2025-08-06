@@ -461,6 +461,38 @@ jobs:
           echo "--- Generated body.html ---"
           cat body.html
 
+      - name: "Delete Conflicting Release Assets"
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
+        run: |
+          set -e
+
+          echo "Finding local artifacts to upload..."
+          mapfile -t local_files < <(find artifacts/armbian-image* artifacts/kernel-debs-*/ -type f -printf "%f\n")
+
+          echo "Fetching existing assets for release ${RELEASE_TAG}..."
+          mapfile -t remote_assets < <(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' || echo "")
+          
+          if [ ${#remote_assets[@]} -eq 0 ]; then
+            echo "No existing assets found in release. Nothing to delete."
+            exit 0
+          fi
+
+          echo "Comparing local and remote files to find conflicts..."
+          for file in "${local_files[@]}"; do
+            for asset in "${remote_assets[@]}"; do
+              if [[ "$file" == "$asset" ]]; then
+                echo "Conflict found. Deleting existing asset: ${asset}..."
+                gh release delete-asset "${RELEASE_TAG}" "${asset}" --yes
+                break
+              fi
+            done
+          done
+          echo "Finished deleting conflicting assets."
+
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
         if: success()
