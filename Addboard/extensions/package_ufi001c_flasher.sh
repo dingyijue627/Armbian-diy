@@ -194,6 +194,11 @@ if [ -f "${FINAL_ARCHIVE_PATH}" ]; then
   else
     echo "⚠️ 警告：未找到 SHA 文件: ${SOURCE_IMAGE_XZ}.sha"
   fi
+  
+  echo "正在为新的发布包生成SHA256校验和..."
+  sha256sum "${FINAL_ARCHIVE_PATH}" | awk '{print $1}' > "${FINAL_ARCHIVE_PATH}.sha"
+  echo "    SHA 文件已创建: ${FINAL_ARCHIVE_PATH}.sha"
+  
 else
   echo "❌ 严重错误：最终包未能创建，原始镜像已被保留。"
   exit 1
