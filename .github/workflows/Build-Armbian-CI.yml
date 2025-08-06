@@ -71,6 +71,7 @@ jobs:
       ROOTFS: ${{ github.event_name == 'schedule' && 'ext4' || inputs.ROOTFS }}
       RELEASE: ${{ steps.set_matrix.outputs.RELEASE }}
       VERSION: ${{ steps.get_version.outputs.VERSION }}
+
     steps:
       - name: "Log effective parameters"
         run: |
@@ -474,38 +475,38 @@ jobs:
           cat body.html
 
       - name: "Delete conflicting assets from existing release"
-          continue-on-error: true
-          shell: bash
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            RELEASE_TAG: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
-          run: |
-            set -e 
-            
-            echo "Finding local artifacts to upload..."
-            mapfile -t local_files < <(find artifacts -type f -path '*/armbian-image*/*' -o -type f -path '*/kernel-debs-*/*' | sed 's#.*/##')
-            if [ ${#local_files[@]} -eq 0 ]; then
-              echo "Warning: No local files found to upload."
-            fi
-      
-            echo "Fetching existing assets for release ${RELEASE_TAG}..."
-            mapfile -t remote_assets < <(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' || echo "")
-            if [ $? -ne 0 ] || [ ${#remote_assets[@]} -eq 0 ]; then
-              echo "No existing release or no assets found. Nothing to delete."
-              exit 0 
-            fi
-      
-            echo "Comparing local and remote files to find conflicts..."
-            for file in "${local_files[@]}"; do
-              for asset in "${remote_assets[@]}"; do
-                if [[ "$file" == "$asset" ]]; then
-                  echo "Conflict found. Deleting existing asset: ${asset}..."
-                  gh release delete-asset "${RELEASE_TAG}" "${asset}" --yes
-                  break 
-                fi
-              done
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
+        run: |
+          set -e 
+          
+          echo "Finding local artifacts to upload..."
+          mapfile -t local_files < <(find artifacts -type f -path '*/armbian-image*/*' -o -type f -path '*/kernel-debs-*/*' | sed 's#.*/##')
+          if [ ${#local_files[@]} -eq 0 ]; then
+            echo "Warning: No local files found to upload."
+          fi
+    
+          echo "Fetching existing assets for release ${RELEASE_TAG}..."
+          mapfile -t remote_assets < <(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' || echo "")
+          if [ $? -ne 0 ] || [ ${#remote_assets[@]} -eq 0 ]; then
+            echo "No existing release or no assets found. Nothing to delete."
+            exit 0 
+          fi
+    
+          echo "Comparing local and remote files to find conflicts..."
+          for file in "${local_files[@]}"; do
+            for asset in "${remote_assets[@]}"; do
+              if [[ "$file" == "$asset" ]]; then
+                echo "Conflict found. Deleting existing asset: ${asset}..."
+                gh release delete-asset "${RELEASE_TAG}" "${asset}" --yes
+                break 
+              fi
             done
-            echo "Finished deleting conflicting assets."
+          done
+          echo "Finished deleting conflicting assets."
 
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
