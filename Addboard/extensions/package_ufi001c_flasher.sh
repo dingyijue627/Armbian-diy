@@ -173,8 +173,11 @@ cp "${GENERATED_BOOT_IMG_PATH}" "${TARGET_IMAGES_DIR}/"
 echo "    转换 system.img 为稀疏格式..."
 SPARSE_IMG_PATH="${TARGET_IMAGES_DIR}/${TEMP_BASENAME}.img"
 img2simg "${DECOMPRESSED_IMG_PATH}" "${SPARSE_IMG_PATH}"
-# 清理原始的raw.img
+# 清理临时文件
 rm "${DECOMPRESSED_IMG_PATH}"
+rm -rf "${MOUNT_POINT}" 
+rm -rf "${BOOT_BUILD_DIR}"
+echo "    临时目录清理完毕。"
 
 # 7. 创建最终的发布包
 echo "--> 7. 正在创建最终的发布包..."
@@ -188,7 +191,6 @@ if [ -f "${FINAL_ARCHIVE_PATH}" ]; then
   echo "    正在删除原始镜像: ${SOURCE_IMAGE_XZ}"
   rm "${SOURCE_IMAGE_XZ}"
   echo "    替换完成。"
-  # 加固的删除SHA文件代码
   if [ -f "${SOURCE_IMAGE_XZ}.sha" ]; then
     rm "${SOURCE_IMAGE_XZ}.sha"
   else
