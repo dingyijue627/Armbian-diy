@@ -348,6 +348,11 @@ jobs:
     if: always() 
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 
+          
       - name: "Download All Artifacts"
         uses: actions/download-artifact@v4
         with:
@@ -375,10 +380,10 @@ jobs:
           VERSION: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
         run: |
           # 1. Gather info from this run's successful builds.
-          NEW_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u | paste -sd ', ' -)
-          NEW_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u | paste -sd ', ' -)
-          NEW_RELEASES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f3 | sort -u | paste -sd ', ' -)
-          NEW_DESKTOPS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f4 | sort -u | paste -sd ', ' -)
+          NEW_BOARDS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f1 | sort -u)
+          NEW_BRANCHES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f2 | sort -u)
+          NEW_RELEASES=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f3 | sort -u)
+          NEW_DESKTOPS=$(find artifacts/matrix-info* -name "*.txt" -print0 | xargs -0 cat | cut -d',' -f4 | sort -u)
 
           # 2. Try to fetch the old release body.
           OLD_BODY=""
@@ -391,25 +396,32 @@ jobs:
 
           # 3. Parse the OLD body using reliable HTML comment markers.
           #    This regex now correctly captures everything between the marker and the closing '-->'.
-          OLD_BOARDS=$(echo "$OLD_BODY" | grep -oP '<!-- BOARDS_LIST: \K.*?(?= -->)' || echo "")
-          OLD_BRANCHES=$(echo "$OLD_BODY" | grep -oP '<!-- KERNELS_LIST: \K.*?(?= -->)' || echo "")
-          OLD_RELEASES=$(echo "$OLD_BODY" | grep -oP '<!-- RELEASES_LIST: \K.*?(?= -->)' || echo "")
-          OLD_DESKTOPS=$(echo "$OLD_BODY" | grep -oP '<!-- DESKTOPS_LIST: \K.*?(?= -->)' || echo "")
+          OLD_BOARDS=$(echo "$OLD_BODY" | grep -oP '<!-- BOARDS_LIST: \K.*?(?= -->)' | tr ',' '\n' || echo "")
+          OLD_BRANCHES=$(echo "$OLD_BODY" | grep -oP '<!-- KERNELS_LIST: \K.*?(?= -->)' | tr ',' '\n' || echo "")
+          OLD_RELEASES=$(echo "$OLD_BODY" | grep -oP '<!-- RELEASES_LIST: \K.*?(?= -->)' | tr ',' '\n' || echo "")
+          OLD_DESKTOPS=$(echo "$OLD_BODY" | grep -oP '<!-- DESKTOPS_LIST: \K.*?(?= -->)' | tr ',' '\n' || echo "")
 
-          # 4. A helper function to merge and sort.
+          # 4. A simplified helper function to merge and sort (already newline-separated)
           function merge_and_sort {
             (
-              echo "$1" | tr ',' '\n'
-              echo "$2" | tr ',' '\n'
-            ) | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep . | sort -u | paste -sd ', ' -
+              echo "$1"
+              echo "$2"
+            ) | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep . | sort -u
           }
 
-          # 5. Merge old and new info.
-          BUILT_BOARDS=$(merge_and_sort "${NEW_BOARDS}" "${OLD_BOARDS}")
-          BUILT_BRANCHES=$(merge_and_sort "${NEW_BRANCHES}" "${OLD_BRANCHES}")
-          BUILT_RELEASES=$(merge_and_sort "${NEW_RELEASES}" "${OLD_RELEASES}")
-          BUILT_DESKTOPS=$(merge_and_sort "${NEW_DESKTOPS}" "${OLD_DESKTOPS}")
+          # 5. Merge old and new info, then format for display at the end
+          # The result of merge_and_sort is a multi-line string
+          MERGED_BOARDS_LIST=$(merge_and_sort "${NEW_BOARDS}" "${OLD_BOARDS}")
+          MERGED_BRANCHES_LIST=$(merge_and_sort "${NEW_BRANCHES}" "${OLD_BRANCHES}")
+          MERGED_RELEASES_LIST=$(merge_and_sort "${NEW_RELEASES}" "${OLD_RELEASES}")
+          MERGED_DESKTOPS_LIST=$(merge_and_sort "${NEW_DESKTOPS}" "${OLD_DESKTOPS}")
 
+          # Now, create the final display string with ", " separator
+          BUILT_BOARDS=$(echo "${MERGED_BOARDS_LIST}" | paste -sd ', ' -)
+          BUILT_BRANCHES=$(echo "${MERGED_BRANCHES_LIST}" | paste -sd ', ' -)
+          BUILT_RELEASES=$(echo "${MERGED_RELEASES_LIST}" | paste -sd ', ' -)
+          BUILT_DESKTOPS=$(echo "${MERGED_DESKTOPS_LIST}" | paste -sd ', ' -)
+          
           echo "--- Merged Info ---"
           echo "Boards: ${BUILT_BOARDS}"
           echo "Kernel: ${BUILT_BRANCHES}"
@@ -461,37 +473,39 @@ jobs:
           echo "--- Generated body.html ---"
           cat body.html
 
-      - name: "Delete Conflicting Release Assets"
-        continue-on-error: true
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
-        run: |
-          set -e
-
-          echo "Finding local artifacts to upload..."
-          mapfile -t local_files < <(find artifacts/armbian-image* artifacts/kernel-debs-*/ -type f -printf "%f\n")
-
-          echo "Fetching existing assets for release ${RELEASE_TAG}..."
-          mapfile -t remote_assets < <(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' || echo "")
-          
-          if [ ${#remote_assets[@]} -eq 0 ]; then
-            echo "No existing assets found in release. Nothing to delete."
-            exit 0
-          fi
-
-          echo "Comparing local and remote files to find conflicts..."
-          for file in "${local_files[@]}"; do
-            for asset in "${remote_assets[@]}"; do
-              if [[ "$file" == "$asset" ]]; then
-                echo "Conflict found. Deleting existing asset: ${asset}..."
-                gh release delete-asset "${RELEASE_TAG}" "${asset}" --yes
-                break
-              fi
+      - name: "Delete conflicting assets from existing release"
+          continue-on-error: true
+          shell: bash
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            RELEASE_TAG: "Armbian_V${{ needs.Prepare_Build.outputs.VERSION }}"
+          run: |
+            set -e 
+            
+            echo "Finding local artifacts to upload..."
+            mapfile -t local_files < <(find artifacts -type f -path '*/armbian-image*/*' -o -type f -path '*/kernel-debs-*/*' | sed 's#.*/##')
+            if [ ${#local_files[@]} -eq 0 ]; then
+              echo "Warning: No local files found to upload."
+            fi
+      
+            echo "Fetching existing assets for release ${RELEASE_TAG}..."
+            mapfile -t remote_assets < <(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' || echo "")
+            if [ $? -ne 0 ] || [ ${#remote_assets[@]} -eq 0 ]; then
+              echo "No existing release or no assets found. Nothing to delete."
+              exit 0 
+            fi
+      
+            echo "Comparing local and remote files to find conflicts..."
+            for file in "${local_files[@]}"; do
+              for asset in "${remote_assets[@]}"; do
+                if [[ "$file" == "$asset" ]]; then
+                  echo "Conflict found. Deleting existing asset: ${asset}..."
+                  gh release delete-asset "${RELEASE_TAG}" "${asset}" --yes
+                  break 
+                fi
+              done
             done
-          done
-          echo "Finished deleting conflicting assets."
+            echo "Finished deleting conflicting assets."
 
       - name: "Publish to GitHub Release"
         uses: ncipollo/release-action@v1
@@ -504,7 +518,7 @@ jobs:
             artifacts/kernel-debs-*/linux-*.deb
           allowUpdates: true
           removeArtifacts: false
-          replacesArtifacts: true
+          replacesArtifacts: false 
           token: ${{ secrets.GITHUB_TOKEN }}
           bodyFile: "body.html"
 
