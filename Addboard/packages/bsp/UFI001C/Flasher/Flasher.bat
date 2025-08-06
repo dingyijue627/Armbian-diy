@@ -1,10 +1,10 @@
 @echo off
-@title UFI001C Armbian È«ÄÜË¢»ú¹¤¾ß
+@title UFI001C Armbian å…¨èƒ½åˆ·æœºå·¥å…·
 color 0A
 mode con cols=105 lines=50
 
 :: =============================================================================================
-:: ¶¨ÒåÎÄ¼şÂ·¾¶±äÁ¿£¬·½±ãÎ¬»¤
+:: å®šä¹‰æ–‡ä»¶è·¯å¾„å˜é‡ï¼Œæ–¹ä¾¿ç»´æŠ¤
 :: =============================================================================================
 set "FASTBOOT_PATH=%~dp0fastboot"
 set "FIRMWARE_PATH=%~dp0firmware"
@@ -14,74 +14,74 @@ set "IMAGES_PATH=%~dp0images"
 cls
 echo =============================================================================================
 echo.
-echo                   »¶Ó­Ê¹ÓÃ UFI001C Armbian È«ÄÜË¢»ú¹¤¾ß
+echo                   æ¬¢è¿ä½¿ç”¨ UFI001C Armbian å…¨èƒ½åˆ·æœºå·¥å…·
 echo.
-echo      ±¾½Å±¾½«Òıµ¼ÄúÍê³ÉËùÓĞ²½Öè£¬°üÀ¨±¸·İ¡¢Ë¢Ğ´µ×²ã¹Ì¼şºÍ°²×° Armbian ÏµÍ³¡£
-echo     - ¡¾¾¯¸æ¡¿ÇëÈ·±£ 'images' ÎÄ¼ş¼ĞÖĞÖ»ÓĞÒ»¸ö Armbian °æ±¾µÄ boot ºÍ rootfs ¾µÏñ£¡
+echo      æœ¬è„šæœ¬å°†å¼•å¯¼æ‚¨å®Œæˆæ‰€æœ‰æ­¥éª¤ï¼ŒåŒ…æ‹¬å¤‡ä»½ã€åˆ·å†™åº•å±‚å›ºä»¶å’Œå®‰è£… Armbian ç³»ç»Ÿã€‚
+echo     - ã€è­¦å‘Šã€‘è¯·ç¡®ä¿ 'images' æ–‡ä»¶å¤¹ä¸­åªæœ‰ä¸€ä¸ª Armbian ç‰ˆæœ¬çš„ boot å’Œ rootfs é•œåƒï¼
 echo.
 echo =============================================================================================
 echo.
 
-:: 1. ¼ì²âÉè±¸Á¬½Ó
-echo [²½Öè 1/7] ÕıÔÚ¼ì²âÉè±¸Á¬½Ó...
+:: 1. æ£€æµ‹è®¾å¤‡è¿æ¥
+echo [æ­¥éª¤ 1/7] æ­£åœ¨æ£€æµ‹è®¾å¤‡è¿æ¥...
 echo.
-echo --- ¼ì²âADBÉè±¸ (°²×¿Ä£Ê½) ---
+echo --- æ£€æµ‹ADBè®¾å¤‡ (å®‰å“æ¨¡å¼) ---
 "%FASTBOOT_PATH%\adb.exe" devices -l | find "device product:" >nul
 if errorlevel 1 (
-    echo [ÌáÊ¾] ADBÉè±¸Î´Á¬½Ó¡£Èç¹ûÉè±¸ÒÑÔÚFastbootÄ£Ê½£¬´ËÌáÊ¾¿ÉºöÂÔ¡£
+    echo [æç¤º] ADBè®¾å¤‡æœªè¿æ¥ã€‚å¦‚æœè®¾å¤‡å·²åœ¨Fastbootæ¨¡å¼ï¼Œæ­¤æç¤ºå¯å¿½ç•¥ã€‚
 ) else (
-    echo [³É¹¦] ADBÉè±¸ÒÑÁ¬½Ó¡£
+    echo [æˆåŠŸ] ADBè®¾å¤‡å·²è¿æ¥ã€‚
 )
 echo.
-echo --- ¼ì²âFastbootÉè±¸ (Ë¢»úÄ£Ê½) ---
+echo --- æ£€æµ‹Fastbootè®¾å¤‡ (åˆ·æœºæ¨¡å¼) ---
 "%FASTBOOT_PATH%\fastboot.exe" devices
 echo.
 
-:: 2. ÓÃ»§È·ÈÏ
-echo ------------------------------------- [ !! ÖØÒª¾¯¸æ !! ] --------------------------------------
+:: 2. ç”¨æˆ·ç¡®è®¤
+echo ------------------------------------- [ !! é‡è¦è­¦å‘Š !! ] --------------------------------------
 echo.
-echo   ´Ë²Ù×÷½«¡¾ÍêÈ«²Á³ı¡¿Éè±¸ÉÏµÄËùÓĞÊı¾İ£¡Ë¢»úÓĞ·çÏÕ£¬²Ù×÷Ğè½÷É÷£¡
-echo   ÇëÈ·±£ÒÑ±¸·İºÃ¸öÈËÊı¾İ£¬²¢±£³ÖUSBÁ¬½ÓÎÈ¶¨¡£
+echo   æ­¤æ“ä½œå°†ã€å®Œå…¨æ“¦é™¤ã€‘è®¾å¤‡ä¸Šçš„æ‰€æœ‰æ•°æ®ï¼åˆ·æœºæœ‰é£é™©ï¼Œæ“ä½œéœ€è°¨æ…ï¼
+echo   è¯·ç¡®ä¿å·²å¤‡ä»½å¥½ä¸ªäººæ•°æ®ï¼Œå¹¶ä¿æŒUSBè¿æ¥ç¨³å®šã€‚
 echo.
 echo -----------------------------------------------------------------------------------------------
 echo.
-set /p confirm="×¼±¸¾ÍĞ÷£¬Çë°´ »Ø³µ¼ü(Enter) Ö±½Ó¿ªÊ¼£¬»òÊäÈë N ÍË³ö: "
+set /p confirm="å‡†å¤‡å°±ç»ªï¼Œè¯·æŒ‰ å›è½¦é”®(Enter) ç›´æ¥å¼€å§‹ï¼Œæˆ–è¾“å…¥ N é€€å‡º: "
 if /i "%confirm%"=="N" (
     echo.
-    echo [²Ù×÷È¡Ïû] ÓÃ»§ÒÑÑ¡ÔñÍË³öË¢»ú¡£
+    echo [æ“ä½œå–æ¶ˆ] ç”¨æˆ·å·²é€‰æ‹©é€€å‡ºåˆ·æœºã€‚
     pause
     exit
 )
 
 :: ===================================================================================================
-::  ¹Ø¼ü²½Öè£ºË¢Ğ´ lk2nd ÒÔ½øĞĞ°²È«±¸·İ
+::  å…³é”®æ­¥éª¤ï¼šåˆ·å†™ lk2nd ä»¥è¿›è¡Œå®‰å…¨å¤‡ä»½
 :: ===================================================================================================
 echo.
-echo [²½Öè 2/7] ÕıÔÚË¢Ğ´ÁÙÊ±Òıµ¼³ÌĞò (lk2nd) ÒÔ½øĞĞ°²È«±¸·İ...
+echo [æ­¥éª¤ 2/7] æ­£åœ¨åˆ·å†™ä¸´æ—¶å¼•å¯¼ç¨‹åº (lk2nd) ä»¥è¿›è¡Œå®‰å…¨å¤‡ä»½...
 echo.
 "%FASTBOOT_PATH%\adb.exe" reboot bootloader >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 "%FASTBOOT_PATH%\fastboot.exe" flash boot "%FIRMWARE_PATH%\lk2nd.img"
-echo ÕıÔÚÖØÆôµ½ lk2nd ÁÙÊ±Òıµ¼...
+echo æ­£åœ¨é‡å¯åˆ° lk2nd ä¸´æ—¶å¼•å¯¼...
 "%FASTBOOT_PATH%\fastboot.exe" reboot
 echo.
-echo ÕıÔÚ×Ô¶¯¼ì²âÉè±¸ÖØÁ¬£¬ÇëÉÔºò (×î³¤µÈ´ı 30 Ãë)...
+echo æ­£åœ¨è‡ªåŠ¨æ£€æµ‹è®¾å¤‡é‡è¿ï¼Œè¯·ç¨å€™ (æœ€é•¿ç­‰å¾… 30 ç§’)...
 set /a countdown=30
 
 :waitForLk2nd
 if %countdown% leq 0 (
     echo.
     echo.
-    echo [´íÎó] µÈ´ıÉè±¸ÖØĞÂÁ¬½Ó³¬Ê±£¡
-    echo Çë¼ì²éUSBÁ¬½ÓºÍÇı¶¯³ÌĞò£¬È»ºóÖØĞÂÔËĞĞ½Å±¾¡£
+    echo [é”™è¯¯] ç­‰å¾…è®¾å¤‡é‡æ–°è¿æ¥è¶…æ—¶ï¼
+    echo è¯·æ£€æŸ¥USBè¿æ¥å’Œé©±åŠ¨ç¨‹åºï¼Œç„¶åé‡æ–°è¿è¡Œè„šæœ¬ã€‚
     pause
     goto :eof
 )
 "%FASTBOOT_PATH%\fastboot.exe" devices | findstr "fastboot" > nul
 if %errorlevel% equ 0 (
 echo.
-    echo [³É¹¦] Éè±¸ÒÑÔÚ lk2nd Fastboot Ä£Ê½ÏÂÁ¬½Ó£¡
+    echo [æˆåŠŸ] è®¾å¤‡å·²åœ¨ lk2nd Fastboot æ¨¡å¼ä¸‹è¿æ¥ï¼
     goto :continueToBackup
 )
 set /p ".=." <nul
@@ -91,26 +91,26 @@ goto waitForLk2nd
 
 :continueToBackup
 echo.
-echo [²½Öè 3/7] ÕıÔÚ±¸·İÉäÆµĞ£×¼·ÖÇø (fsc, fsg, modemst1, modemst2)...
+echo [æ­¥éª¤ 3/7] æ­£åœ¨å¤‡ä»½å°„é¢‘æ ¡å‡†åˆ†åŒº (fsc, fsg, modemst1, modemst2)...
 echo.
 "%FASTBOOT_PATH%\fastboot.exe" oem dump fsc && "%FASTBOOT_PATH%\fastboot.exe" get_staged "%FIRMWARE_PATH%\fsc.bin"
 "%FASTBOOT_PATH%\fastboot.exe" oem dump fsg && "%FASTBOOT_PATH%\fastboot.exe" get_staged "%FIRMWARE_PATH%\fsg.bin"
 "%FASTBOOT_PATH%\fastboot.exe" oem dump modemst1 && "%FASTBOOT_PATH%\fastboot.exe" get_staged "%FIRMWARE_PATH%\modemst1.bin"
 "%FASTBOOT_PATH%\fastboot.exe" oem dump modemst2 && "%FASTBOOT_PATH%\fastboot.exe" get_staged "%FIRMWARE_PATH%\modemst2.bin"
 echo.
-echo [³É¹¦] ¹Ø¼ü·ÖÇøÒÑ±¸·İÖÁ 'firmware' ÎÄ¼ş¼Ğ¡£
+echo [æˆåŠŸ] å…³é”®åˆ†åŒºå·²å¤‡ä»½è‡³ 'firmware' æ–‡ä»¶å¤¹ã€‚
 timeout /t 2 /nobreak
 echo.
 
 :: ===================================================================================================
-::  ÇåÀíÁÙÊ±Òıµ¼£¬¿ªÊ¼Ë¢Ğ´µ×²ã
+::  æ¸…ç†ä¸´æ—¶å¼•å¯¼ï¼Œå¼€å§‹åˆ·å†™åº•å±‚
 :: ===================================================================================================
-echo [²½Öè 4/7] ÕıÔÚË¢Ğ´µ×²ã¹Ì¼şºÍ·ÖÇø±í...
+echo [æ­¥éª¤ 4/7] æ­£åœ¨åˆ·å†™åº•å±‚å›ºä»¶å’Œåˆ†åŒºè¡¨...
 echo.
-echo ÇåÀíÁÙÊ±Òıµ¼²¢ÖØÆôµ½Bootloader...
+echo æ¸…ç†ä¸´æ—¶å¼•å¯¼å¹¶é‡å¯åˆ°Bootloader...
 "%FASTBOOT_PATH%\fastboot.exe" erase boot
 "%FASTBOOT_PATH%\fastboot.exe" reboot bootloader
-echo µÈ´ıÉè±¸ÔÙ´Î½øÈëBootloader...
+echo ç­‰å¾…è®¾å¤‡å†æ¬¡è¿›å…¥Bootloader...
 timeout /t 5 /nobreak >nul
 
 "%FASTBOOT_PATH%\fastboot.exe" flash partition "%FIRMWARE_PATH%\gpt_both0.bin"
@@ -122,73 +122,73 @@ timeout /t 5 /nobreak >nul
 "%FASTBOOT_PATH%\fastboot.exe" flash cdt "%FIRMWARE_PATH%\sbc_1.0_8016.bin"
 echo.
 
-echo [²½Öè 5/7] ÕıÔÚ»Ö¸´¹Ø¼ü·ÖÇø²¢²Á³ı¾ÉÏµÍ³...
+echo [æ­¥éª¤ 5/7] æ­£åœ¨æ¢å¤å…³é”®åˆ†åŒºå¹¶æ“¦é™¤æ—§ç³»ç»Ÿ...
 echo.
 "%FASTBOOT_PATH%\fastboot.exe" flash fsc "%FIRMWARE_PATH%\fsc.bin"
 "%FASTBOOT_PATH%\fastboot.exe" flash fsg "%FIRMWARE_PATH%\fsg.bin"
 "%FASTBOOT_PATH%\fastboot.exe" flash modemst1 "%FIRMWARE_PATH%\modemst1.bin"
 "%FASTBOOT_PATH%\fastboot.exe" flash modemst2 "%FIRMWARE_PATH%\modemst2.bin"
 echo.
-echo ÕıÔÚ²Á³ıbootºÍrootfs·ÖÇøÒÔ±¸Ë¢Ğ´...
+echo æ­£åœ¨æ“¦é™¤bootå’Œrootfsåˆ†åŒºä»¥å¤‡åˆ·å†™...
 "%FASTBOOT_PATH%\fastboot.exe" erase boot
 "%FASTBOOT_PATH%\fastboot.exe" erase rootfs
 echo.
 
 :: ===================================================================================================
-::  ×Ô¶¯²éÕÒ²¢Ë¢Ğ´ Armbian
+::  è‡ªåŠ¨æŸ¥æ‰¾å¹¶åˆ·å†™ Armbian
 :: ===================================================================================================
-echo [²½Öè 6/7] ÕıÔÚ×Ô¶¯²éÕÒ Armbian ÏµÍ³¾µÏñ...
+echo [æ­¥éª¤ 6/7] æ­£åœ¨è‡ªåŠ¨æŸ¥æ‰¾ Armbian ç³»ç»Ÿé•œåƒ...
 echo.
 set "ROOTFS_IMAGE_FILE="
 set "BOOT_IMAGE_FILE="
 
-:: ¡¾ĞÂÔö¡¿²éÕÒ boot.img ÎÄ¼ş
+:: ã€æ–°å¢ã€‘æŸ¥æ‰¾ boot.img æ–‡ä»¶
 for %%F in ("%IMAGES_PATH%\Armbian*.boot.img") do (
     set "BOOT_IMAGE_FILE=%%~fF"
 )
 
-:: ²éÕÒ rootfs.img ÎÄ¼ş (Â·¾¶¸ñÊ½»¯Îª %%~fF)
+:: æŸ¥æ‰¾ rootfs.img æ–‡ä»¶ (è·¯å¾„æ ¼å¼åŒ–ä¸º %%~fF)
 for %%F in ("%IMAGES_PATH%\Armbian*.rootfs.img") do (
     set "ROOTFS_IMAGE_FILE=%%~fF"
 )
 
-:: ¡¾ĞŞ¸Ä¡¿¼ì²é boot.img ÊÇ·ñÕÒµ½
+:: ã€ä¿®æ”¹ã€‘æ£€æŸ¥ boot.img æ˜¯å¦æ‰¾åˆ°
 if not defined BOOT_IMAGE_FILE (
-    echo [´íÎó] ÔÚ 'images' ÎÄ¼ş¼ĞÖĞÃ»ÓĞÕÒµ½Æ¥Åä 'Armbian*.boot.img' µÄÎÄ¼ş£¡
-    echo Çë¼ì²éÎÄ¼şÃûÊÇ·ñÕıÈ·£¬»òÕßÎÄ¼şÊÇ·ñ´æÔÚ¡£
+    echo [é”™è¯¯] åœ¨ 'images' æ–‡ä»¶å¤¹ä¸­æ²¡æœ‰æ‰¾åˆ°åŒ¹é… 'Armbian*.boot.img' çš„æ–‡ä»¶ï¼
+    echo è¯·æ£€æŸ¥æ–‡ä»¶åæ˜¯å¦æ­£ç¡®ï¼Œæˆ–è€…æ–‡ä»¶æ˜¯å¦å­˜åœ¨ã€‚
     pause
     exit
 )
 if not defined ROOTFS_IMAGE_FILE (
-    echo [´íÎó] ÔÚ 'images' ÎÄ¼ş¼ĞÖĞÃ»ÓĞÕÒµ½Æ¥Åä 'Armbian*.rootfs.img' µÄÎÄ¼ş£¡
-    echo Çë¼ì²éÎÄ¼şÃûÊÇ·ñÕıÈ·£¬»òÕßÎÄ¼şÊÇ·ñ´æÔÚ¡£
+    echo [é”™è¯¯] åœ¨ 'images' æ–‡ä»¶å¤¹ä¸­æ²¡æœ‰æ‰¾åˆ°åŒ¹é… 'Armbian*.rootfs.img' çš„æ–‡ä»¶ï¼
+    echo è¯·æ£€æŸ¥æ–‡ä»¶åæ˜¯å¦æ­£ç¡®ï¼Œæˆ–è€…æ–‡ä»¶æ˜¯å¦å­˜åœ¨ã€‚
     pause
     exit
 )
 
-echo [³É¹¦] ×Ô¶¯¼ì²âµ½ÏµÍ³¾µÏñÎª:
+echo [æˆåŠŸ] è‡ªåŠ¨æ£€æµ‹åˆ°ç³»ç»Ÿé•œåƒä¸º:
 echo   Boot   : "%BOOT_IMAGE_FILE%"
 echo   Rootfs : "%ROOTFS_IMAGE_FILE%"
 echo.
 
-echo [²½Öè 7/7] ÕıÔÚË¢ÈëĞÂµÄ Armbian ÏµÍ³...
-echo   ´Ë¹ı³Ì¿ÉÄÜĞèÒª¼¸·ÖÖÓ£¬ÇëÄÍĞÄµÈ´ı£¬²»Òª¶Ï¿ªUSBÁ¬½Ó£¡
+echo [æ­¥éª¤ 7/7] æ­£åœ¨åˆ·å…¥æ–°çš„ Armbian ç³»ç»Ÿ...
+echo   æ­¤è¿‡ç¨‹å¯èƒ½éœ€è¦å‡ åˆ†é’Ÿï¼Œè¯·è€å¿ƒç­‰å¾…ï¼Œä¸è¦æ–­å¼€USBè¿æ¥ï¼
 echo.
-echo --- ÕıÔÚË¢Èë boot ·ÖÇø ---
+echo --- æ­£åœ¨åˆ·å…¥ boot åˆ†åŒº ---
 "%FASTBOOT_PATH%\fastboot.exe" flash boot "%BOOT_IMAGE_FILE%"
 echo.
-echo --- ÕıÔÚË¢Èë rootfs ·ÖÇø (´óÎÄ¼ş£¬ÇëÄÍĞÄµÈ´ı) ---
-"%FASTBOOT_PATH%\fastboot.exe" -S 256m flash rootfs "%ROOTFS_IMAGE_FILE%"
+echo --- æ­£åœ¨åˆ·å…¥ rootfs åˆ†åŒº (å¤§æ–‡ä»¶ï¼Œè¯·è€å¿ƒç­‰å¾…) ---
+"%FASTBOOT_PATH%\fastboot.exe" -S 200m flash rootfs "%ROOTFS_IMAGE_FILE%"
 echo.
 
 :: ===================================================================================================
-::  Íê³É
+::  å®Œæˆ
 :: ===================================================================================================
 echo ===================================================================================================
 echo.
-echo [³É¹¦] Ë¢»úÁ÷³ÌÒÑÈ«²¿Íê³É£¡
+echo [æˆåŠŸ] åˆ·æœºæµç¨‹å·²å…¨éƒ¨å®Œæˆï¼
 echo.
-echo Éè±¸½«ÔÚ 5 Ãëºó×Ô¶¯ÖØÆô½øÈëĞÂÏµÍ³¡£×£ÄúÊ¹ÓÃÓä¿ì£¡
+echo è®¾å¤‡å°†åœ¨ 5 ç§’åè‡ªåŠ¨é‡å¯è¿›å…¥æ–°ç³»ç»Ÿã€‚ç¥æ‚¨ä½¿ç”¨æ„‰å¿«ï¼
 echo.
 echo ===================================================================================================
 
@@ -196,6 +196,7 @@ timeout /t 5 /nobreak
 "%FASTBOOT_PATH%\fastboot.exe" reboot
 
 echo.
-echo ²Ù×÷Íê³É£¬°´ÈÎÒâ¼üÍË³ö´°¿Ú¡£
+echo æ“ä½œå®Œæˆï¼ŒæŒ‰ä»»æ„é”®é€€å‡ºçª—å£ã€‚
 pause >nul
+
 exit
