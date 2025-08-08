@@ -122,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [lemonpi, som3588-cat]
+        BOARD: [lemonpi, som3588-cat, ufi001c]
         BRANCH: [edge, vendor]
 
     steps:
@@ -211,7 +211,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [ lemonpi, som3588-cat ]
+        BOARD: [lemonpi, som3588-cat, ufi001c]
         BRANCH: [ edge, vendor ]
         RELEASE: ${{ fromJson(needs.Prepare_Build.outputs.RELEASE) }}
         DESKTOP: ${{ fromJson(needs.Prepare_Build.outputs.DESKTOP) }}
@@ -253,6 +253,7 @@ jobs:
           sudo apt-get update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
           sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          sudo apt-get install -y mkbootimg android-sdk-libsparse-utils
           
           # Set build flags as environment variables based on the DESKTOP type.
           if [[ "${{ matrix.DESKTOP }}" == "minimal" ]]; then
@@ -317,6 +318,14 @@ jobs:
             EXPERT="yes" \
             VENDOR=Armbian \
             COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
+
+      - name: "Package UFI001C Flasher"
+        if: matrix.BOARD == 'ufi001c'
+        shell: bash
+        run: |
+          cd ./build
+          chmod +x ./extensions/package_ufi001c_flasher.sh
+          sudo ./extensions/package_ufi001c_flasher.sh
 
       - name: "Upload Image Artifact"
         uses: actions/upload-artifact@v4
