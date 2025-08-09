@@ -20,10 +20,12 @@
 	model = "LemonPi";
 	compatible = "rockchip,rk3588-lemonpi", "rockchip,rk3588";
 
+	/* If hdmirx node is disabled, delete the reserved-memory node here. */
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+		/* Reserve 256MB memory for hdmirx-controller@fdee0000 */
 		cma {
 			compatible = "shared-dma-pool";
 			reusable;
@@ -399,12 +401,12 @@
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		// pinctrl-names = "default";
-		// pinctrl-0 = <&pinctrl_pca9535_1>;
-		// interrupt-parent = <&gpio2>;
-		// interrupts = <RK_PC4 IRQ_TYPE_LEVEL_HIGH>;
-		// interrupt-controller;
-		// #interrupt-cells = <2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pca9535_1>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PC4 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 };
 
@@ -419,12 +421,12 @@
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		// pinctrl-names = "default";
-		// pinctrl-0 = <&pinctrl_pca9535_2>;
-		// interrupt-parent = <&gpio2>;
-		// interrupts = <RK_PC5 IRQ_TYPE_LEVEL_HIGH>;
-		// interrupt-controller;
-		// #interrupt-cells = <2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pca9535_2>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PC5 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 };
 
@@ -533,8 +535,11 @@
 			power-role = "dual";
 			try-power-role = "sink";
 			op-sink-microwatt = <1000000>;
-			sink-pdos = <PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)>;
-			source-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
+			sink-pdos =
+				<PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)>;
+			source-pdos =
+				<PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
+
 			altmodes {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -718,6 +723,7 @@
 				regulator-max-microvolt = <950000>;
 				regulator-ramp-delay = <12500>;
 				regulator-name = "vdd_gpu_s0";
+				regulator-enable-ramp-delay = <400>;
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
@@ -734,11 +740,11 @@
 			vdd_log_s0: DCDC_REG3 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <750000>;
-				regulator-max-microvolt = <750000>;
+				regulator-min-microvolt = <675000>;
+				regulator-max-microvolt = <800000>;
 				regulator-ramp-delay = <12500>;
 				regulator-name = "vdd_log_s0";
-				regulator-state-mem { regulator-on-in-suspend; };
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
 			vdd_vdenc_s0: vdd_vdenc_mem_s0: DCDC_REG4 {
@@ -755,8 +761,8 @@
 			vdd_ddr_s0: DCDC_REG5 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <850000>;
-				regulator-max-microvolt = <850000>;
+				regulator-min-microvolt = <675000>;
+				regulator-max-microvolt = <900000>;
 				regulator-ramp-delay = <12500>;
 				regulator-name = "vdd_ddr_s0";
 				regulator-state-mem {
@@ -812,21 +818,21 @@
 				};
 			};
 
-			vcc_1v8_s0: PLDO_REG1 {
-				regulator-always-on;
-				regulator-boot-on;
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <1800000>;
-				regulator-name = "vcc_1v8_s0";
-				regulator-state-mem { regulator-on-in-suspend; };
-			};
-
-			avcc_1v8_s0: PLDO_REG2 {
+			avcc_1v8_s0: PLDO_REG1 {
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
 				regulator-name = "avcc_1v8_s0";
+				regulator-state-mem { regulator-on-in-suspend; };
+			};
+
+			vcc_1v8_s0: PLDO_REG2 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-name = "vcc_1v8_s0";
 				regulator-state-mem {
 					regulator-off-in-suspend;
 					regulator-suspend-microvolt = <1800000>;
@@ -899,10 +905,34 @@
 			avdd_0v75_s0: NLDO_REG3 {
 				regulator-always-on;
 				regulator-boot-on;
+				regulator-min-microvolt = <837500>;
+				regulator-max-microvolt = <837500>;
+				regulator-name = "avdd_0v75_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			avdd_0v85_s0: NLDO_REG4 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-name = "avdd_0v85_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdd_0v75_s0: NLDO_REG5 {
+				regulator-always-on;
+				regulator-boot-on;
 				regulator-min-microvolt = <750000>;
 				regulator-max-microvolt = <750000>;
-				regulator-name = "avdd_0v75_s0";
-				regulator-state-mem { regulator-off-in-suspend; };
+				regulator-name = "vdd_0v75_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 		};
 	};
@@ -929,7 +959,7 @@
 
 &i2s0_8ch {
 	status = "okay";
-	rockchip,clk-trcm = <1>;
+	rockchip,trcm-sync-tx-only;
 	pinctrl-0 = <&i2s0_lrck
 			 &i2s0_sclk
 			 &i2s0_sdi0
@@ -1210,6 +1240,7 @@
 	rgmii_phy0: phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x00>;
+		realtek,led-data = <0x6d60>;  //8211F phy
 	};
 };
 
@@ -1217,6 +1248,7 @@
 	rgmii_phy1: phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x00>;
+		realtek,led-data = <0x6d60>;  //8211F phy
 	};
 };
 
@@ -1431,6 +1463,7 @@
 
 &vop {
 	status = "okay";
+	vop-supply = <&vdd_log_s0>;
 	// disable-win-move;
 };
 
