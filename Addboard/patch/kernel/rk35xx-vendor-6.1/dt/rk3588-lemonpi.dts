@@ -10,7 +10,6 @@
 
 #include <dt-bindings/usb/pd.h>
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/display/rockchip_vop.h>
 #include "rk3588.dtsi"
@@ -20,12 +19,12 @@
 	model = "LemonPi";
 	compatible = "rockchip,rk3588-lemonpi", "rockchip,rk3588";
 
-	/* If hdmirx node is disabled, delete the reserved-memory node here. */
+	/* 256MB CMA memory for multimedia */
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-		/* Reserve 256MB memory for hdmirx-controller@fdee0000 */
+
 		cma {
 			compatible = "shared-dma-pool";
 			reusable;
@@ -34,10 +33,12 @@
 		};
 	};
 
+	/* Kernel boot arguments */
 	chosen: chosen {
 		bootargs = "earlycon=uart8250,mmio32,0xfeb50000 console=ttyFIQ0 irqchip.gicv3_pseudo_nmi=0 rcupdate.rcu_expedited=1 rcu_nocbs=all";
 	};
 
+	/* ADC buttons */
 	adc_keys: adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
@@ -52,6 +53,7 @@
 		};
 	};
 
+	/* On-board LEDs */
 	leds: leds {
 		status = "okay";
 		compatible = "gpio-leds";
@@ -80,6 +82,7 @@
 		};
 	};
 
+	/* 12V DC input */
 	vcc12v_dcin: vcc12v-dcin {
 		compatible = "regulator-fixed";
 		regulator-always-on;
@@ -89,6 +92,7 @@
 		regulator-name = "vcc12v_dcin";
 	};
 
+	/* 5V system supply */
 	vcc5v0_sys: vcc5v0-sys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_sys";
@@ -99,6 +103,7 @@
 		vin-supply = <&vcc12v_dcin>;
 	};
 
+	/* 3.3V system supply */
 	vcc3v3_sys: vcc3v3-sys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc3v3_sys";
@@ -109,6 +114,7 @@
 		vin-supply = <&vcc12v_dcin>;
 	};
 
+	/* 5V peripheral supply */
 	vcc_5v0: vcc-5v0 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_5v0";
@@ -119,6 +125,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	/* 5V USB supply */
 	vcc5v0_usb: vcc5v0-usb {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_5v0";
@@ -129,6 +136,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	/* 1.8V Combo PHY analog supply */
 	combophy_avdd1v8: combophy-avdd1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "combophy_avdd1v8";
@@ -138,6 +146,7 @@
 		vin-supply = <&avcc_1v8_s0>;
 	};
 
+	/* 1.1V NLDO supply, on in suspend */
 	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_1v1_nldo_s3";
@@ -148,6 +157,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	/* 3.3V supply, on when active */
 	vcc_3v3_s0: vcc-3v3-s0 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_3v3_s0";
@@ -158,6 +168,7 @@
 		vin-supply = <&vcc_3v3_s3>;
 	};
 
+	/* 3.3V SD card supply, on in suspend */
 	vcc_3v3_sd_s3: vcc-3v3-sd-s3 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_3v3_sd_s3";
@@ -168,6 +179,7 @@
 		vin-supply = <&vcc_3v3_s3>;
 	};
 
+	/* USB Type-C VBUS switch */
 	vbus_typec: vbus-typec {
 		compatible = "regulator-fixed";
 		regulator-name = "vbus_typec";
@@ -180,6 +192,7 @@
 		pinctrl-0 = <&typec_vbus_en>;
 	};
 
+	/* MIPI DSI0 power */
 	mipi_dsi0_power: mipi-dsi0-power-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "mipi_dsi0_power";
@@ -189,6 +202,7 @@
 		regulator-always-on;
 	};
 
+	/* MIPI DSI1 power */
 	mipi_dsi1_power: mipi-dsi1-power-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "mipi_dsi1_power";
@@ -198,6 +212,7 @@
 		regulator-always-on;
 	};
 
+	/* MIPI DP1/eDP power */
 	mipi_dp1_power: mipi-edp-power-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "mipi_dp1_power";
@@ -207,6 +222,7 @@
 		regulator-always-on;
 	};
 
+	/* HDMI1 audio output */
 	hdmi1_sound: hdmi1-sound {
 		status = "okay";
 		compatible = "rockchip,hdmi";
@@ -217,6 +233,7 @@
 		rockchip,jack-det;
 	};
 
+	/* HDMI audio input */
 	hdmiin_sound: hdmiin-sound {
 		compatible = "rockchip,hdmi";
 		rockchip,mclk-fs = <128>;
@@ -229,6 +246,7 @@
 		rockchip,jack-det;
 	};
 
+	/* DisplayPort 0 audio output */
 	dp0_sound: dp0-sound {
 		status = "okay";
 		compatible = "rockchip,hdmi";
@@ -239,6 +257,7 @@
 		rockchip,jack-det;
 	};
 
+	/* ES8388 audio card */
 	es8388_sound: es8388-sound {
 		status = "okay";
 		compatible = "rockchip,multicodecs-card";
@@ -283,7 +302,7 @@
 		};
 	};
 
-	/* --- Fan Control --- */
+	/* PWM cooling fan */
 	fan: pwm-fan {
 		compatible = "pwm-fan";
 		#cooling-cells = <2>;
@@ -297,50 +316,56 @@
 		>;
 	};
 
+	/* Test power node */
 	test-power {
 		status = "okay";
 	};
 };
 
-&dmc_opp_table {
-	/delete-node/ opp-2750000000;
-};
-
+/* Enable AV1 decoder */
 &av1d {
 	status = "okay";
 };
 
+/* Enable AV1 decoder MMU */
 &av1d_mmu {
 	status = "okay";
 };
 
+/* Enable SPDIF TX2 */
 &spdif_tx2 {
 	status = "okay";
 };
 
+/* Enable I2S5 */
 &i2s5_8ch {
 	status = "okay";
 };
 
+/* Enable I2S6 */
 &i2s6_8ch {
 	status = "okay";
 };
 
+/* CPU little core supplies */
 &cpu_l0 {
 	cpu-supply = <&vdd_cpu_lit_s0>;
 	mem-supply = <&vdd_cpu_lit_mem_s0>;
 };
 
+/* CPU big core cluster 0 supplies */
 &cpu_b0 {
 	cpu-supply = <&vdd_cpu_big0_s0>;
 	mem-supply = <&vdd_cpu_big0_mem_s0>;
 };
 
+/* CPU big core cluster 1 supplies */
 &cpu_b2 {
 	cpu-supply = <&vdd_cpu_big1_s0>;
 	mem-supply = <&vdd_cpu_big1_mem_s0>;
 };
 
+/* Enable GPU */
 &gpu {
 	mali-supply = <&vdd_gpu_s0>;
 	mem-supply = <&vdd_gpu_mem_s0>;
@@ -349,28 +374,33 @@
 	status = "okay";
 };
 
+/* Enable DFI */
 &dfi {
 	status = "okay";
 };
 
+/* Enable DMC */
 &dmc {
 	status = "okay";
 	center-supply = <&vdd_ddr_s0>;
 	mem-supply = <&vdd_log_s0>;
 };
 
+/* Enable I2C4 */
 &i2c4 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c4m3_xfer>;
 };
 
+/* Enable I2C3 */
 &i2c3 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c3m0_xfer>;
 };
 
+/* System suspend config */
 &rockchip_suspend {
 	status = "okay";
 	rockchip,sleep-debug-en = <1>;
@@ -390,6 +420,7 @@
 	>;
 };
 
+/* I2C5 Bus & GPIO Expander */
 &i2c5 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c5m2_xfer>;
@@ -410,11 +441,13 @@
 	};
 };
 
+/* I2C6 Bus & GPIO Expander */
 &i2c6 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c6m0_xfer>;
 
+	/* PCA9535 GPIO expander */
 	gpio7: gpio-expander@21 {
 		compatible = "nxp,pca9535";
 		status = "okay";
@@ -430,11 +463,13 @@
 	};
 };
 
+/* I2C0 Bus & Devices */
 &i2c0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c0m2_xfer>;
 	status = "okay";
 
+	/* HYM8563 RTC */
 	hym8563: hym8563@51 {
 		compatible = "haoyu,hym8563";
 		reg = <0x51>;
@@ -448,6 +483,7 @@
 		wakeup-source;
 	};
 
+	/* PMIC for big core 0 */
 	vdd_cpu_big0_s0: vdd_cpu_big0_mem_s0: rk8602@42 {
 		compatible = "rockchip,rk8602";
 		reg = <0x42>;
@@ -465,6 +501,7 @@
 		};
 	};
 
+	/* PMIC for big core 1 */
 	vdd_cpu_big1_s0: vdd_cpu_big1_mem_s0: rk8603@43 {
 		compatible = "rockchip,rk8603";
 		reg = <0x43>;
@@ -483,11 +520,13 @@
 	};
 };
 
+/* I2C1 Bus & Devices */
 &i2c1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1m2_xfer>;
 	status = "okay";
 
+	/* PMIC for NPU */
 	vdd_npu_s0: vdd_npu_mem_s0: rk8602@42 {
 		compatible = "rockchip,rk8602";
 		reg = <0x42>;
@@ -505,7 +544,7 @@
 		};
 	};
 
-	/* Typec Controller Fusb302 */
+	/* FUSB302 Type-C Controller */
 	usbc0: fusb302@22 {
 		compatible = "fcs,fusb302";
 		reg = <0x22>;
@@ -528,6 +567,7 @@
 			};
 		};
 
+		/* USB-C connector properties */
 		usb_con: connector {
 			compatible = "usb-c-connector";
 			label = "USB-C";
@@ -573,6 +613,7 @@
 	};
 };
 
+/* SPI2 Bus & Main PMIC */
 &spi2 {
 	status = "okay";
 	assigned-clocks = <&cru CLK_SPI2>;
@@ -581,6 +622,7 @@
 	pinctrl-0 = <&spi2m2_cs0 &spi2m2_pins>;
 	num-cs = <1>;
 
+	/* RK806 PMIC */
 	rk806single@0 {
 		compatible = "rockchip,rk806";
 		spi-max-frequency = <1000000>;
@@ -593,21 +635,10 @@
 		pinctrl-0 = <&pmic_pins>, <&rk806_dvs1_null>, <&rk806_dvs2_null>, <&rk806_dvs3_null>;
 		pinctrl-1 = <&rk806_dvs1_pwrdn>;
 
-		/* 2800mv-3500mv */
 		low_voltage_threshold = <3000>;
-		/* 2700mv-3400mv */
 		shutdown_voltage_threshold = <2700>;
-		/* 140 160 */
 		shutdown_temperture_threshold = <160>;
 		hotdie_temperture_threshold = <115>;
-
-		/* 0: restart PMU;
-		 * 1: reset all the power off reset registers,
-		 *	forcing the state to switch to ACTIVE mode;
-		 * 2: Reset all the power off reset registers,
-		 *	forcing the state to switch to ACTIVE mode,
-		 *	and simultaneously pull down the RESETB PIN for 5mS before releasing
-		 */
 		pmic-reset-func = <1>;
 
 		vcc1-supply = <&vcc5v0_sys>;
@@ -630,6 +661,7 @@
 			status = "okay";
 		};
 
+		/* PMIC internal pin control */
 		pinctrl_rk806: pinctrl_rk806 {
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -715,7 +747,10 @@
 			};
 		};
 
+		/* PMIC Regulators */
 		regulators {
+
+			/* GPU core supply */
 			vdd_gpu_s0: vdd_gpu_mem_s0: DCDC_REG1 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -727,6 +762,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* CPU little core supply */
 			vdd_cpu_lit_s0: vdd_cpu_lit_mem_s0: DCDC_REG2 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -737,6 +773,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* SoC logic supply */
 			vdd_log_s0: DCDC_REG3 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -747,6 +784,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* Video encoder supply */
 			vdd_vdenc_s0: vdd_vdenc_mem_s0: DCDC_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -758,6 +796,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* DDR memory core supply */
 			vdd_ddr_s0: DCDC_REG5 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -765,12 +804,10 @@
 				regulator-max-microvolt = <900000>;
 				regulator-ramp-delay = <12500>;
 				regulator-name = "vdd_ddr_s0";
-				regulator-state-mem {
-					regulator-off-in-suspend;
-					regulator-suspend-microvolt = <850000>;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* DDR VDD2 supply, on in suspend */
 			vdd2_ddr_s3: DCDC_REG6 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -778,6 +815,7 @@
 				regulator-state-mem { regulator-on-in-suspend; };
 			};
 
+			/* 2.0V PLDO supply, on in suspend */
 			vcc_2v0_pldo_s3: DCDC_REG7 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -790,6 +828,7 @@
 				};
 			};
 
+			/* 3.3V supply, on in suspend */
 			vcc_3v3_s3: DCDC_REG8 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -799,6 +838,7 @@
 				regulator-state-mem { regulator-on-in-suspend; };
 			};
 
+			/* DDR VDDQ supply */
 			vddq_ddr_s0: DCDC_REG9 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -806,6 +846,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* 1.8V supply, on in suspend */
 			vcc_1v8_s3: DCDC_REG10 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -818,6 +859,7 @@
 				};
 			};
 
+			/* 1.8V analog supply */
 			avcc_1v8_s0: PLDO_REG1 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -827,18 +869,17 @@
 				regulator-state-mem { regulator-on-in-suspend; };
 			};
 
+			/* 1.8V digital supply */
 			vcc_1v8_s0: PLDO_REG2 {
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
 				regulator-name = "vcc_1v8_s0";
-				regulator-state-mem {
-					regulator-off-in-suspend;
-					regulator-suspend-microvolt = <1800000>;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* 1.2V analog supply */
 			avdd_1v2_s0: PLDO_REG3 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -848,6 +889,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* 3.3V analog supply */
 			avcc_3v3_s0: PLDO_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -857,6 +899,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* SD card IO supply */
 			vccio_sd_s0: PLDO_REG5 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -866,6 +909,7 @@
 				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* PLDO6 supply, on in suspend */
 			pldo6_s3: PLDO_REG6 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -878,6 +922,7 @@
 				};
 			};
 
+			/* 0.75V supply, on in suspend */
 			vdd_0v75_s3: NLDO_REG1 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -890,18 +935,17 @@
 				};
 			};
 
+			/* DDR PLL analog supply */
 			avdd_ddr_pll_s0: NLDO_REG2 {
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-min-microvolt = <850000>;
 				regulator-max-microvolt = <850000>;
 				regulator-name = "avdd_ddr_pll_s0";
-				regulator-state-mem {
-					regulator-off-in-suspend;
-					regulator-suspend-microvolt = <850000>;
-				};
+				regulator-state-mem { regulator-off-in-suspend; };
 			};
 
+			/* 0.75V analog supply (at 0.8375V) */
 			avdd_0v75_s0: NLDO_REG3 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -913,6 +957,7 @@
 				};
 			};
 
+			/* 0.85V analog supply */
 			avdd_0v85_s0: NLDO_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -924,6 +969,7 @@
 				};
 			};
 
+			/* 0.75V digital supply */
 			vdd_0v75_s0: NLDO_REG5 {
 				regulator-always-on;
 				regulator-boot-on;
@@ -938,11 +984,13 @@
 	};
 };
 
+/* I2C7 Bus & Audio Codec */
 &i2c7 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c7m0_xfer>;
 	status = "okay";
 
+	/* ES8388 audio codec */
 	es8388: es8388@11 {
 		status = "okay";
 		#sound-dai-cells = <0>;
@@ -957,6 +1005,7 @@
 	};
 };
 
+/* Enable I2S0 */
 &i2s0_8ch {
 	status = "okay";
 	rockchip,trcm-sync-tx-only;
@@ -966,15 +1015,18 @@
 			 &i2s0_sdo0>;
 };
 
+/* Enable SARADC */
 &saradc {
 	status = "okay";
 	vref-supply = <&avcc_1v8_s0>;
 };
 
+/* Enable TSADC */
 &tsadc {
 	status = "okay";
 };
 
+/* eMMC interface */
 &sdhci {
 	bus-width = <8>;
 	no-sdio;
@@ -987,6 +1039,7 @@
 	status = "okay";
 };
 
+/* SD/TF card interface */
 &sdmmc {
 	max-frequency = <200000000>;
 	no-sdio;
@@ -1003,26 +1056,32 @@
 	status = "okay";
 };
 
+/* Enable IEP */
 &iep {
 	status = "okay";
 };
 
+/* Enable IEP MMU */
 &iep_mmu {
 	status = "okay";
 };
 
+/* Enable JPEG decoder */
 &jpegd {
 	status = "okay";
 };
 
+/* Enable JPEG decoder MMU */
 &jpegd_mmu {
 	status = "okay";
 };
 
+/* Enable JPEG encoder CCU */
 &jpege_ccu {
 	status = "okay";
 };
 
+/* Enable JPEG encoder 0 */
 &jpege0 {
 	status = "okay";
 };
@@ -1031,6 +1090,7 @@
 	status = "okay";
 };
 
+/* Enable JPEG encoder 1 */
 &jpege1 {
 	status = "okay";
 };
@@ -1039,6 +1099,7 @@
 	status = "okay";
 };
 
+/* Enable JPEG encoder 2 */
 &jpege2 {
 	status = "okay";
 };
@@ -1047,6 +1108,7 @@
 	status = "okay";
 };
 
+/* Enable JPEG encoder 3 */
 &jpege3 {
 	status = "okay";
 };
@@ -1055,25 +1117,30 @@
 	status = "okay";
 };
 
+/* Enable MPP service */
 &mpp_srv {
 	status = "okay";
 };
 
+/* Enable PWM4 */
 &pwm4 {
 	pinctrl-0 = <&pwm4m0_pins>;
 	status = "okay";
 };
 
+/* Enable PWM2 */
 &pwm2 {
 	pinctrl-0 = <&pwm2m0_pins>;
 	status = "okay";
 };
 
+/* Enable PWM6 */
 &pwm6 {
 	pinctrl-0 = <&pwm6m0_pins>;
 	status = "okay";
 };
 
+/* PWM3 as IR receiver */
 &pwm3 {
 	compatible = "rockchip,remotectl-pwm";
 	pinctrl-names = "default";
@@ -1097,18 +1164,19 @@
 		<0xf8   KEY_FASTREVERSE>,/* 快退按键 */
 		<0xf2   KEY_BACKSPACE>,  /* BaskSpace按键 */
 		<0xf3   KEY_1>,          /* 按键1 */
-        <0xe7   KEY_2>,
-        <0xa1   KEY_3>,
-        <0xf7   KEY_4>,
-        <0xe3   KEY_5>,
-        <0xa5   KEY_6>,
-        <0xbd   KEY_7>,
-        <0xad   KEY_8>,
-        <0xb5   KEY_9>,
+		<0xe7   KEY_2>,
+		<0xa1   KEY_3>,
+		<0xf7   KEY_4>,
+		<0xe3   KEY_5>,
+		<0xa5   KEY_6>,
+		<0xbd   KEY_7>,
+		<0xad   KEY_8>,
+		<0xb5   KEY_9>,
 		<0xe9   KEY_0>;          /* 按键0 */
 	};
 };
 
+/* Enable RGA3 core 0 */
 &rga3_core0 {
 	status = "okay";
 };
@@ -1117,6 +1185,7 @@
 	status = "okay";
 };
 
+/* Enable RGA3 core 1 */
 &rga3_core1 {
 	status = "okay";
 };
@@ -1125,24 +1194,29 @@
 	status = "okay";
 };
 
+/* Enable RGA2 */
 &rga2 {
 	status = "okay";
 };
 
+/* Enable NPU */
 &rknpu {
 	rknpu-supply = <&vdd_npu_s0>;
 	mem-supply = <&vdd_npu_mem_s0>;
 	status = "okay";
 };
 
+/* Enable NPU MMU */
 &rknpu_mmu {
 	status = "okay";
 };
 
+/* Enable video decoder CCU */
 &rkvdec_ccu {
 	status = "okay";
 };
 
+/* Enable video decoder 0 */
 &rkvdec0 {
 	status = "okay";
 };
@@ -1151,6 +1225,7 @@
 	status = "okay";
 };
 
+/* Enable video decoder 1 */
 &rkvdec1 {
 	status = "okay";
 };
@@ -1159,10 +1234,12 @@
 	status = "okay";
 };
 
+/* Enable video encoder CCU */
 &rkvenc_ccu {
 	status = "okay";
 };
 
+/* Enable video encoder 0 */
 &rkvenc0 {
 	status = "okay";
 };
@@ -1171,6 +1248,7 @@
 	status = "okay";
 };
 
+/* Enable video encoder 1 */
 &rkvenc1 {
 	status = "okay";
 };
@@ -1179,115 +1257,115 @@
 	status = "okay";
 };
 
+/* Enable video tunnel */
 &rkvtunnel {
 	status = "okay";
 };
 
-/* this is a watchdog */
+/* Enable watchdog */
 &wdt {
 	status = "okay";
 };
 
+/* Ethernet MAC 0 */
 &gmac0 {
-	/* Use rgmii-rxid mode to disable rx delay inside Soc */
 	phy-mode = "rgmii-rxid";
 	clock_in_out = "output";
-
 	snps,reset-gpio = <&gpio4 RK_PC6 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
-	/* Reset time is 20ms, 100ms for rtl8211f */
 	snps,reset-delays-us = <0 20000 100000>;
-
 	pinctrl-names = "default";
 	pinctrl-0 = <&gmac0_miim
 			 &gmac0_tx_bus2
 			 &gmac0_rx_bus2
 			 &gmac0_rgmii_clk
 			 &gmac0_rgmii_bus>;
-
 	tx_delay = <0x20>;
-	/* rx_delay = <0x4f>; */
-
 	phy-handle = <&rgmii_phy0>;
 	status = "okay";
 };
 
+/* Ethernet MAC 1 */
 &gmac1 {
-	/* Use rgmii-rxid mode to disable rx delay inside Soc */
 	phy-mode = "rgmii-rxid";
 	clock_in_out = "output";
-
 	snps,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
-	/* Reset time is 20ms, 100ms for rtl8211f */
 	snps,reset-delays-us = <0 20000 100000>;
-
 	pinctrl-names = "default";
 	pinctrl-0 = <&gmac1_miim
 			 &gmac1_tx_bus2
 			 &gmac1_rx_bus2
 			 &gmac1_rgmii_clk
 			 &gmac1_rgmii_bus>;
-
 	tx_delay = <0x20>;
-	/* rx_delay = <0x4f>; */
-
 	phy-handle = <&rgmii_phy1>;
 	status = "okay";
 };
 
+/* MDIO0 Bus & PHY */
 &mdio0 {
 	rgmii_phy0: phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x00>;
-		realtek,led-data = <0x6d60>;  //8211F phy
+		realtek,led-data = <0x6d60>;
 	};
 };
 
+/* MDIO1 Bus & PHY */
 &mdio1 {
 	rgmii_phy1: phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x00>;
-		realtek,led-data = <0x6d60>;  //8211F phy
+		realtek,led-data = <0x6d60>;
 	};
 };
 
-/* PCIe30 PHY Port0 & Port1 */
+/* PCIe 3.0 PHY */
 &pcie30phy {
 	rockchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
 	status = "okay";
 };
 
-// PCIe30 Port0: M.2 M-Key
+/* PCIe 3.0 x4 (M.2 M-Key) */
 &pcie3x4 {
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_sys>;
 	status = "okay";
 };
 
-/* SATA30_HOST1/PCIe20x1_0 Combo PHY */
+/* Combo PHY 1 (PCIe/SATA) */
 &combphy1_ps {
 	status = "okay";
 };
 
-// M.2 E-Key
+/* PCIe 2.0 x1 (M.2 E-Key) */
 &pcie2x1l0 {
 	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
 	disable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
-/* SATA30_HOST0/PCIe20x1_2 Combo PHY */
+/* Combo PHY 0 (PCIe/SATA) */
 &combphy0_ps {
 	status = "okay";
 };
 
-// SATA-PCIe
+/* PCIe 2.0 x1 (Mini-PCIe) */
+&pcie2x1l2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie_disable_pin>;
+	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
+	disable-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+	status = "disabled";
+};
+
+/* SATA 0 */
 &sata0{
 	status = "okay";
 };
 
-/* USB3.1/DP Combo PHY1 */
+/* USB3/DP Combo PHY 1 */
 &usbdp_phy1 {
 	status = "okay";
 };
@@ -1296,6 +1374,7 @@
 	status = "okay";
 };
 
+/* USB 3.1 Host */
 &usbdrd3_1 {
 	status = "okay";
 };
@@ -1305,7 +1384,7 @@
 	dr_mode = "host";
 };
 
-/* USB3.1/DP Combo PHY0 */
+/* USB3/DP Combo PHY 0 (Type-C) */
 &usbdp_phy0 {
 	orientation-switch;
 	svid = <0xff01>;
@@ -1336,16 +1415,17 @@
 	status = "okay";
 };
 
-/* USB3.1 OTG0 Controller  */
+/* USB 3.1 OTG */
 &usbdrd3_0 {
 	status = "okay";
 };
 
+/* USB 3.1 OTG DWC3 core */
 &usbdrd_dwc3_0 {
 	dr_mode = "otg";
 	usb-role-switch;
-
 	status = "okay";
+	
 	port {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1356,7 +1436,7 @@
 	};
 };
 
-/* USB2.0 PHY0 */
+/* USB 2.0 PHY 0 (OTG) */
 &u2phy0 {
 	status = "okay";
 };
@@ -1366,6 +1446,7 @@
 	status = "okay";
 };
 
+/* USB 2.0 PHY 1 (OTG) */
 &u2phy1 {
 	status = "okay";
 };
@@ -1374,12 +1455,12 @@
 	status = "okay";
 };
 
-/* USB3.1/SATA/PCIe20x1_1 Combo PHY */
+/* Combo PHY 2 (USB3/SATA/PCIe) */
 &combphy2_psu {
 	status = "okay";
 };
 
-/* USB3.1 HOST2 Controller  */
+/* USB 3.1 Host 2 */
 &usbhost3_0 {
 	status = "okay";
 };
@@ -1389,7 +1470,7 @@
 	status = "okay";
 };
 
-/* USB2.0 HOST0 PHY2 */
+/* USB 2.0 PHY 2 (Host) */
 &u2phy2 {
 	status = "okay";
 };
@@ -1399,16 +1480,17 @@
 	status = "okay";
 };
 
-/* USB2.0 HOST0 Controller */
+/* USB 2.0 Host 0 (EHCI) */
 &usb_host0_ehci {
 	status = "okay";
 };
 
+/* USB 2.0 Host 0 (OHCI) */
 &usb_host0_ohci {
 	status = "okay";
 };
 
-/* USB2.0 HOST1 PHY3 */
+/* USB 2.0 PHY 3 (Host) */
 &u2phy3 {
 	status = "okay";
 };
@@ -1418,15 +1500,17 @@
 	status = "okay";
 };
 
-/* USB2.0 HOST1 Controller */
+/* USB 2.0 Host 1 (EHCI) */
 &usb_host1_ehci {
 	status = "okay";
 };
 
+/* USB 2.0 Host 1 (OHCI) */
 &usb_host1_ohci {
 	status = "okay";
 };
 
+/* VDPU (Video Decode) */
 &vdpu {
 	status = "okay";
 };
@@ -1435,15 +1519,17 @@
 	status = "okay";
 };
 
+/* VEPU (Video Encode) */
 &vepu {
 	status = "okay";
 };
 
-/* dp0 display */
+/* DisplayPort 0 output */
 &dp0 {
 	status = "okay";
 };
 
+/* DP0 video routing */
 &route_dp0 {
 	status = "okay";
 	connect = <&vp1_out_dp0>;
@@ -1461,41 +1547,45 @@
 	status = "disabled";
 };
 
+/* VOP (Video Output Processor) */
 &vop {
 	status = "okay";
 	vop-supply = <&vdd_log_s0>;
-	// disable-win-move;
 };
 
+/* VOP MMU */
 &vop_mmu {
 	status = "okay";
 };
 
+/* HDMI receiver */
 &hdmirx_ctrler {
 	status = "okay";
 	#sound-dai-cells = <1>;
-	/* Effective level used to trigger HPD: 0-low, 1-high */
 	hpd-trigger-level = <1>;
 	hdmirx-det-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&hdmim1_rx_cec &hdmim1_rx_hpdin &hdmim1_rx_scl &hdmim1_rx_sda &hdmirx_det>;
 	pinctrl-names = "default";
 };
 
-/* HDMI1 Audio */
+/* Display subsystem */
 &display_subsystem {
 	clocks = <&hdptxphy_hdmi1>;
 	clock-names = "hdmi1_phy_pll";
 };
 
+/* HDMI1 TX PHY */
 &hdptxphy_hdmi1 {
 	status = "okay";
 };
 
+/* HDMI1 video routing */
 &route_hdmi1{
 	status = "okay";
 	connect = <&vp0_out_hdmi1>;
 };
 
+/* HDMI1 output */
 &hdmi1 {
 	enable-gpios = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>;
 	status = "okay";
@@ -1514,53 +1604,62 @@
 };
 
 
-/* HDMI IN Audio */
+/* HDMI-in audio link */
 &hdmiin_sound {
 	status = "okay";
 };
 
+/* I2S7 for HDMI-in audio */
 &i2s7_8ch{
 	status = "okay";
 };
 
-/* vp0 & vp1 splice for 8K output */
+/* Video Plane 0 (for 8K) */
 &vp0 {
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER0 | 1 << ROCKCHIP_VOP2_ESMART0)>;
 	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART0>;
 	// cursor-win-id = <ROCKCHIP_VOP2_CLUSTER0>;
 };
 
+/* Video Plane 1 (for 8K) */
 &vp1 {
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER1 | 1 << ROCKCHIP_VOP2_ESMART1)>;
 	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART1>;
 	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER1>;
 };
 
+/* Video Plane 2 */
 &vp2 {
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER2 | 1 << ROCKCHIP_VOP2_ESMART2)>;
 	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART2>;
 	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER2>;
 };
 
+/* Video Plane 3 */
 &vp3 {
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER3 | 1 << ROCKCHIP_VOP2_ESMART3)>;
 	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART3>;
 	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER3>;
 };
 
+/* Pin control hub */
 &pinctrl {
+	
+	/* RTC interrupt pin */
 	hym8563 {
 		hym8563_int: hym8563-int {
 			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
+	/* Headphone detect pin */
 	headphone {
 		hp_det: hp-det {
 			rockchip,pins = <1 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
+	/* Pins for USB Type-C */
 	usb-typec {
 		fusb302_int: fusb302-int {
 			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;
@@ -1570,24 +1669,34 @@
 		};
 	};
 
+	/* System LED pin */
 	leds {
 		sys_led_pin: sys-led-pin {
 			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
+	/* HDMI-in detect pin */
 	hdmirx {
 		hdmirx_det: hdmirx-det {
 			rockchip,pins = <1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
+	/* IO expander interrupt pins */
 	io {
 		pinctrl_pca9535_1: pinctrl-pca9535-1 {
 			rockchip,pins = <2 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 		pinctrl_pca9535_2: pinctrl-pca9535-2 {
 			rockchip,pins = <2 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	/* PCIe disable pin */
+	pcie {
+		pcie_disable_pin: pcie-disable-pin{
+			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 };
