@@ -9,9 +9,9 @@ diff -Nur a/arch/arm64/boot/dts/rockchip/overlay/Makefile b/arch/arm64/boot/dts/
  	rk3588-uart0-m2.dtbo \
  	rk3588-uart1-m1.dtbo \
  	rk3588-uart2-m0.dtbo \
-diff -Nur a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso
---- a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso	1970-01-01 08:00:00.000000000 +0800
-+++ b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso	2025-08-10 17:50:23.837449866 +0800
+diff -Nur a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dts b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dts
+--- a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dts	1970-01-01 08:00:00.000000000 +0800
++++ b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dts	2025-08-10 17:50:23.837449866 +0800
 @@ -0,0 +1,94 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/dts-v1/;
