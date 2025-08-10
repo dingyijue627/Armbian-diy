@@ -1,0 +1,186 @@
+diff -Nur a/arch/arm64/boot/dts/rockchip/overlay/Makefile b/arch/arm64/boot/dts/rockchip/overlay/Makefile
+--- a/arch/arm64/boot/dts/rockchip/overlay/Makefile	2025-08-10 17:42:38.397459592 +0800
++++ b/arch/arm64/boot/dts/rockchip/overlay/Makefile	2025-08-10 17:50:02.905454580 +0800
+@@ -184,6 +184,7 @@
+ 	rk3588-spi4-m1-cs0-spidev.dtbo \
+ 	rk3588-spi4-m1-cs1-spidev.dtbo \
+ 	rk3588-spi4-m2-cs0-spidev.dtbo \
++	rk3588-lemonpi-spi.dtbo \
+ 	rk3588-uart0-m2.dtbo \
+ 	rk3588-uart1-m1.dtbo \
+ 	rk3588-uart2-m0.dtbo \
+diff -Nur a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso
+--- a/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso	1970-01-01 08:00:00.000000000 +0800
++++ b/arch/arm64/boot/dts/rockchip/overlay/rk3588-lemonpi-spi.dtso	2025-08-10 17:50:23.837449866 +0800
+@@ -0,0 +1,94 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/pinctrl/rockchip.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++    fragment@0 {
++        target = <&spi0>;
++        __overlay__ {
++            status = "okay";
++            pinctrl-names = "default";
++            pinctrl-0 = <&spi0m1_clk_pins>, <&spi0m1_mosi_pins>, <&spi0m1_cs0_pins>;
++
++            st7789_panel: panel@0 {
++                compatible = "sitronix,st7789v";
++                reg = <0>;
++                spi-max-frequency = <48000000>;
++                pinctrl-names = "default";
++                pinctrl-0 = <&st7789_dc_pins>, <&st7789_reset_pins>;
++                reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_LOW>;
++                dc-gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
++                backlight = <&st7789_backlight>;
++                width = <172>;
++                height = <320>;
++                rotate = <90>;
++                fps = <30>;
++                buswidth = <8>;
++                x-offset = <0>;
++                y-offset = <34>; 
++                status = "okay";
++            };
++        };
++    };
++
++    fragment@1 {
++        target-path = "/";
++        __overlay__ {
++            st7789_backlight: st7789-backlight {
++                compatible = "pwm-backlight";
++                pwms = <&pwm13 0 100000 0>;
++                brightness-levels = <0 4 8 16 32 64 128 255>;
++                default-brightness-level = <6>;
++                power-supply = <&vcc3v3_sys>;
++                status = "okay";
++            };
++        };
++    };
++
++    fragment@2 {
++        target = <&pwm13>;
++        __overlay__ {
++            pinctrl-names = "default";
++            pinctrl-0 = <&pwm13_m1_pins>;
++            status = "okay";
++        };
++    };
++
++    fragment@3 {
++        target = <&pinctrl>;
++        __overlay__ {
++            /* SPI0 M1 Pins */
++            spi0-m1-pins  {
++                spi0m1_clk_pins: spi0m1-clk-pins {
++                    rockchip,pins = <4 RK_PA2 8 &pcfg_pull_up_drv_level_1>;
++                };
++                spi0m1_mosi_pins: spi0m1-mosi-pins {
++                    rockchip,pins = <4 RK_PA1 8 &pcfg_pull_up_drv_level_1>;
++                };
++                spi0m1_cs0_pins: spi0m1-cs0-pin {
++                    rockchip,pins = <4 RK_PB2 8 &pcfg_pull_up_drv_level_1>;
++                };
++            };
++
++            /* ST7789 GPIO Pins */
++            st7789-pins {
++                st7789_dc_pins: st7789-dc-pins {
++                    rockchip,pins = <4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
++                };
++                st7789_reset_pins: st7789-reset-pins {
++                    rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++                };
++            };
++
++            /* PWM13 M1 Pin */
++            pwm13-m1 {
++                pwm13_m1_pins: pwm13-m1-pins {
++                    rockchip,pins = <4 RK_PB6 11 &pcfg_pull_none>;
++                };
++            };
++        };
++    };
++};
+\ No newline at end of file
+diff -Nur a/drivers/staging/fbtft/fb_st7789v.c b/drivers/staging/fbtft/fb_st7789v.c
+--- a/drivers/staging/fbtft/fb_st7789v.c	2025-08-10 17:43:01.733460636 +0800
++++ b/drivers/staging/fbtft/fb_st7789v.c	2025-08-10 17:45:19.041463116 +0800
+@@ -13,6 +13,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/completion.h>
+ #include <linux/module.h>
++#include <linux/property.h>
+ 
+ #include <video/mipi_display.h>
+ 
+@@ -76,6 +77,30 @@
+ static struct completion panel_te; /* completion for panel TE line */
+ static int irq_te; /* Linux IRQ for LCD TE line */
+ 
++struct st7789v_par {
++	u32 x_offset;
++	u32 y_offset;
++};
++
++static void set_addr_win_flexible(struct fbtft_par *par, int xs, int ys, int xe, int ye)
++{
++	struct st7789v_par *st_par = dev_get_drvdata(par->info->device);
++
++	/* Apply the offsets read from the device tree */
++	xs += st_par->x_offset;
++	xe += st_par->x_offset;
++	ys += st_par->y_offset;
++	ye += st_par->y_offset;
++
++	write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS,
++		  (xs >> 8) & 0xFF, xs & 0xFF, (xe >> 8) & 0xFF, xe & 0xFF);
++
++	write_reg(par, MIPI_DCS_SET_PAGE_ADDRESS,
++		  (ys >> 8) & 0xFF, ys & 0xFF, (ye >> 8) & 0xFF, ye & 0xFF);
++
++	write_reg(par, MIPI_DCS_WRITE_MEMORY_START);
++}
++
+ static irqreturn_t panel_te_handler(int irq, void *data)
+ {
+ 	complete(&panel_te);
+@@ -142,8 +167,25 @@
+  */
+ static int init_display(struct fbtft_par *par)
+ {
++	struct device *dev = par->info->device;
++	struct st7789v_par *st_par;
+ 	int rc;
+ 
++	/* Allocate and initialize our private data structure */
++	st_par = devm_kzalloc(dev, sizeof(struct st7789v_par), GFP_KERNEL);
++	if (!st_par)
++		return -ENOMEM;
++
++	/* Read optional offset properties from the device tree */
++	device_property_read_u32(dev, "x-offset", &st_par->x_offset);
++	device_property_read_u32(dev, "y-offset", &st_par->y_offset);
++
++	/* Attach our private data to the device for later retrieval */
++	dev_set_drvdata(dev, st_par);
++
++	dev_info(dev, "display offsets: x=%u, y=%u\n", st_par->x_offset, st_par->y_offset);
++
++
+ 	par->fbtftops.reset(par);
+ 
+ 	rc = init_tearing_effect_line(par);
+@@ -379,6 +421,7 @@
+ 		.set_var = set_var,
+ 		.set_gamma = set_gamma,
+ 		.blank = blank,
++		.set_addr_win = set_addr_win_flexible,
+ 	},
+ };
+ 
