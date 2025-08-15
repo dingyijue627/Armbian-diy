@@ -307,6 +307,7 @@ jobs:
             BETA="${{ needs.Prepare_Build.outputs.NIGHTLY }}" \
             PREFER_DOCKER="${{ needs.Prepare_Build.outputs.DOCKER }}" \
             ROOTFS_TYPE="${{ needs.Prepare_Build.outputs.ROOTFS }}" \
+            NETWORKING_STACK="network-manager" \
             EXPERT="yes" \
             VENDOR=Armbian \
             COMPRESS_OUTPUTIMAGE="sha,gpg,xz"
