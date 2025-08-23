@@ -134,6 +134,36 @@ echo 正在擦除boot和rootfs分区以备刷写...
 "%FASTBOOT_PATH%\fastboot.exe" erase rootfs
 echo.
 
+echo 正在重启设备以应用新的分区表... 请保持连接！
+echo.
+"%FASTBOOT_PATH%\fastboot.exe" reboot bootloader
+echo.
+echo 正在自动检测设备重连，请稍候 (最长等待 30 秒)...
+set /a countdown=30
+
+:waitForFinalBootloader
+if %countdown% leq 0 (
+    echo.
+    echo.
+    echo [错误] 等待设备重新连接超时！
+    echo 请检查USB连接和驱动程序，然后重新运行脚本。
+    pause
+    goto :eof
+)
+"%FASTBOOT_PATH%\fastboot.exe" devices | findstr "fastboot" > nul
+if %errorlevel% equ 0 (
+    echo.
+    echo [成功] 设备已在新分区表下连接！准备刷入 Armbian 系统...
+    goto :continueToFlashArmbian
+)
+set /p ".=." <nul
+timeout /t 1 /nobreak >nul
+set /a countdown-=1
+goto waitForFinalBootloader
+
+:continueToFlashArmbian
+echo.
+
 :: ===================================================================================================
 ::  自动查找并刷写 Armbian
 :: ===================================================================================================
