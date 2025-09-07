@@ -54,7 +54,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASE: "oracular plucky noble bookworm trixie"
+  RELEASE: "plucky noble bookworm trixie"
 
 jobs:
   # ====================================================================
@@ -350,6 +350,14 @@ jobs:
     if: always() 
 
     steps:
+      - name: "Maximize Runner Free Space"
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* openjdk* mysql* php* mongodb* dotnet* moby* snapd* android* || true
+          sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
