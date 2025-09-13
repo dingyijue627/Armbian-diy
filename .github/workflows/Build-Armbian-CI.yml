@@ -115,8 +115,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [lemonpi, som3588-cat, ufi001c]
-        BRANCH: [edge, vendor]
+        BOARD: [aml-s9xx-box]
+        BRANCH: [current]
 
     steps:
       - name: "Checkout Board Source"
