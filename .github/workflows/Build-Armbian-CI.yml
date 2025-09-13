@@ -204,8 +204,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BOARD: [lemonpi, som3588-cat, ufi001c, aml-s9xx-box]
-        BRANCH: [ current, edge, vendor ]
+        BOARD: [ aml-s9xx-box ]
+        BRANCH: [ current ]
         RELEASE: ${{ fromJson(needs.Prepare_Build.outputs.RELEASE) }}
         DESKTOP: ${{ fromJson(needs.Prepare_Build.outputs.DESKTOP) }}
         
